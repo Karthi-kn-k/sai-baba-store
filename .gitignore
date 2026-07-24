@@ -1,0 +1,16 @@
+# Node modules
+node_modules
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Build outputs
+dist
+build
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal

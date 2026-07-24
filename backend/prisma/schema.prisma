@@ -1,0 +1,153 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PACKED
+  FULFILLED
+  CANCELLED
+}
+
+enum LedgerEntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentMethod {
+  UPI
+  PICKUP
+  DEBT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum LedgerEntryType {
+  DEBIT
+  CREDIT
+}
+
+model User {
+  id                    String        @id @default(uuid())
+  name                  String
+  email                 String        @unique
+  phone                 String        @unique
+  passwordHash          String
+  role                  Role          @default(CUSTOMER)
+  hasAccountNotebook    Boolean       @default(false)
+  notebookRequestStatus String        @default("NONE")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  orders                Order[]
+  ledgerEntries         LedgerEntry[]
+  createdAudit          AuditLog[]    @relation("CreatedByRelation")
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  price       Float
+  stockQty    Int
+  category    String
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  customerId    String
+  customer      User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status        OrderStatus   @default(PLACED)
+  totalAmount   Float
+  paymentMethod PaymentMethod
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         OrderItem[]
+  payments      Payment[]
+  ledgerEntries LedgerEntry[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float
+}
+
+model Payment {
+  id         String        @id @default(uuid())
+  orderId    String
+  order      Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method     PaymentMethod
+  status     PaymentStatus @default(PENDING)
+  upiTxnRef  String?       @unique
+  amount     Float
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model LedgerEntry {
+  id           String            @id @default(uuid())
+  customerId   String
+  customer     User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type         LedgerEntryType
+  amount       Float
+  refOrderId   String?
+  order        Order?            @relation(fields: [refOrderId], references: [id], onDelete: SetNull)
+  note         String?
+  createdBy    String
+  createdAt    DateTime          @default(now())
+  status       LedgerEntryStatus @default(APPROVED)
+  upiTxnRef    String?
+  auditLogs    AuditLog[]
+}
+
+model AuditLog {
+  id            String       @id @default(uuid())
+  ledgerEntryId String
+  ledgerEntry   LedgerEntry  @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade)
+  action        String
+  oldValue      String?
+  newValue      String?
+  reason        String
+  createdById   String
+  createdBy     User         @relation("CreatedByRelation", fields: [createdById], references: [id])
+  createdAt     DateTime     @default(now())
+}
+
+model OtpVerification {
+  id           String   @id @default(uuid())
+  email        String?
+  phone        String?
+  otpHash      String
+  purpose      String
+  expiresAt    DateTime
+  attempts     Int      @default(0)
+  resends      Int      @default(0)
+  lastResentAt DateTime @default(now())
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}

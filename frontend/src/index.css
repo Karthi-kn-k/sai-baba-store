@@ -1,0 +1,292 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap');
+
+/* =====================================================
+   SAI BABA STORE — Devotional Design System
+   Colors: Saffron · Deep Maroon · Gold · Cream
+   ===================================================== */
+
+:root {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+
+  /* Sai Baba Devotional Palette */
+  --saffron:       #f97316;   /* Main saffron orange */
+  --saffron-deep:  #ea580c;   /* Darker saffron */
+  --saffron-light: #fed7aa;   /* Light saffron tint */
+  --gold:          #d97706;   /* Gold accent */
+  --gold-light:    #fef3c7;   /* Gold wash */
+  --maroon:        #7f1d1d;   /* Deep maroon */
+  --maroon-mid:    #991b1b;   /* Maroon mid */
+  --maroon-light:  #fecaca;   /* Light maroon */
+  --cream:         #fffbf5;   /* Warm cream background */
+  --cream-dark:    #fef3e2;   /* Slightly darker cream */
+
+  /* Text */
+  --text-primary:   #1c0a00;
+  --text-secondary: #7c3a00;
+  --text-muted:     #a16207;
+}
+
+/* ── GLOBAL BASE ──────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* Warm cream devotional background with a subtle lotus pattern hint */
+  background-color: var(--cream);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(249,115,22,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(217,119,6,0.06) 0%, transparent 50%);
+  color: var(--text-primary);
+  min-height: 100dvh;
+}
+
+/* ── TYPOGRAPHY ──────────────────────────────────── */
+h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  color: var(--maroon);
+}
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #fef3e2; }
+::-webkit-scrollbar-thumb { background: #f97316; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+/* ── GLASS PANEL (Devotional) ────────────────────── */
+.glass-panel {
+  background: rgba(255, 251, 245, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+}
+
+/* ── DEVOTIONAL CARD ─────────────────────────────── */
+.devotional-card {
+  background: white;
+  border: 1px solid rgba(249, 115, 22, 0.18);
+  border-top: 3px solid var(--saffron);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(249,115,22,0.07);
+}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--saffron) 0%, var(--saffron-deep) 100%);
+  color: white;
+  font-weight: 700;
+  border: none;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 12px rgba(249,115,22,0.30);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--saffron-deep) 0%, #c2410c 100%);
+  box-shadow: 0 6px 18px rgba(249,115,22,0.40);
+  transform: translateY(-1px);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold) 0%, #b45309 100%);
+  color: white;
+  font-weight: 700;
+  border: none;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 12px rgba(217,119,6,0.30);
+}
+.btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(217,119,6,0.40);
+}
+
+.btn-maroon {
+  background: linear-gradient(135deg, var(--maroon-mid) 0%, var(--maroon) 100%);
+  color: white;
+  font-weight: 700;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 12px rgba(127,29,29,0.25);
+}
+.btn-maroon:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(127,29,29,0.35);
+}
+
+/* ── ANIMATIONS ──────────────────────────────────── */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes diyas {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  50%       { transform: scaleY(1.15) scaleX(0.9); opacity: 0.85; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217,119,6,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(217,119,6,0); }
+}
+
+.animate-slide-in    { animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-up    { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-in     { animation: fadeIn 0.4s ease-out forwards; }
+.animate-scale-up    { animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-diya        { animation: diyas 2s ease-in-out infinite; }
+.animate-spin-slow   { animation: spin-slow 12s linear infinite; }
+.animate-gold-pulse  { animation: goldPulse 2s ease-in-out infinite; }
+
+/* ── HOVER LIFT ──────────────────────────────────── */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px -6px rgba(249,115,22,0.15), 0 8px 16px -8px rgba(127,29,29,0.08);
+}
+
+/* ── DEVOTIONAL BANNER ───────────────────────────── */
+.sai-banner {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #7c2d12 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.sai-banner::before {
+  content: "ॐ";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8rem;
+  opacity: 0.06;
+  font-family: 'Tiro Devanagari Hindi', serif;
+  color: #fde68a;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── PRODUCT CARD ────────────────────────────────── */
+.product-card {
+  background: white;
+  border: 1px solid rgba(249,115,22,0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(249,115,22,0.06);
+}
+.product-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(249,115,22,0.35);
+  box-shadow: 0 16px 32px -8px rgba(249,115,22,0.18), 0 8px 16px -8px rgba(127,29,29,0.08);
+}
+
+/* ── SAFFRON INPUT ───────────────────────────────── */
+.saffron-input {
+  background: #fffbf5;
+  border: 1.5px solid rgba(249,115,22,0.25);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #1c0a00;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.saffron-input:focus {
+  outline: none;
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+.saffron-input::placeholder {
+  color: #c2845a;
+}
+
+/* ── NOTEBOOK PAGE ───────────────────────────────── */
+.notebook-page {
+  background-image: linear-gradient(rgba(249,115,22,0.08) 1px, transparent 1px);
+  background-size: 100% 2rem;
+  background-color: #fffbf5;
+}
+
+/* ── DEVOTIONAL DIVIDER ──────────────────────────── */
+.lotus-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 16px 0;
+}
+.lotus-divider::before,
+.lotus-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* ── MOBILE NAV SAFE AREA ────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ── MOBILE BOTTOM NAV ───────────────────────────── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 2px solid rgba(249,115,22,0.15);
+  display: flex;
+  z-index: 40;
+  box-shadow: 0 -4px 20px rgba(249,115,22,0.10);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mobile-bottom-nav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px 6px;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #a16207;
+  border: none;
+  background: transparent;
+  transition: color 0.18s, background 0.18s;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mobile-bottom-nav button.active {
+  color: var(--saffron);
+  background: rgba(249,115,22,0.07);
+  border-top: 2px solid var(--saffron);
+  margin-top: -2px;
+}

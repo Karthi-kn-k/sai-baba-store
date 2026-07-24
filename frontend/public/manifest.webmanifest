@@ -1,0 +1,22 @@
+{
+  "short_name": "Sai Baba Store",
+  "name": "Sai Baba Store - Grocery & Account Notes",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#fffbf5",
+  "theme_color": "#7f1d1d",
+  "display": "standalone",
+  "orientation": "portrait"
+}
