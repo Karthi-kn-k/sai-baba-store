@@ -966,35 +966,44 @@ export const CustomerDashboard: React.FC = () => {
               Order #{pendingPaymentOrder.id.slice(0, 8)} · ₹{pendingPaymentOrder.totalAmount.toFixed(2)}
             </div>
 
-            {/* MOBILE: Big pay button that opens UPI app directly */}
-            {isMobile ? (
-              <a
-                href={upiDeepLink}
-                className="btn-primary w-full py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-3 mb-5 animate-gold-pulse"
-                style={{ textDecoration: "none" }}
-              >
-                <CreditCard className="w-6 h-6" />
-                Open UPI App & Pay ₹{pendingPaymentOrder.totalAmount.toFixed(2)}
-              </a>
-            ) : (
-              /* DESKTOP: QR code */
-              <>
-                <div
-                  className="p-4 rounded-2xl mb-4"
-                  style={{ background: "#fffbf5", border: "2px solid rgba(249,115,22,0.2)" }}
+            {/* QR Code section (Visible on Mobile & Desktop) */}
+            <div className="p-4 rounded-2xl mb-3 flex flex-col items-center" style={{ background: "#fffbf5", border: "2px solid rgba(249,115,22,0.2)" }}>
+              <QRCodeSVG
+                value={upiDeepLink}
+                size={180}
+                level="M"
+                fgColor={SAI.maroon}
+                bgColor="#fffbf5"
+              />
+              <p className="text-[11px] font-semibold mt-2.5 text-center" style={{ color: SAI.textMuted }}>
+                Scan with Google Pay, PhonePe, Paytm or FamPay
+              </p>
+            </div>
+
+            {/* Mobile Actions: Open App / Copy UPI ID */}
+            {isMobile && (
+              <div className="w-full space-y-2 mb-4">
+                <a
+                  href={upiDeepLink}
+                  className="btn-primary w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                  style={{ textDecoration: "none" }}
                 >
-                  <QRCodeSVG
-                    value={upiDeepLink}
-                    size={180}
-                    level="M"
-                    fgColor={SAI.maroon}
-                    bgColor="#fffbf5"
-                  />
-                </div>
-                <p className="text-xs mb-4 px-2" style={{ color: SAI.textMuted }}>
-                  Scan with Google Pay, PhonePe, or Paytm
-                </p>
-              </>
+                  <CreditCard className="w-4 h-4" />
+                  Open UPI App (₹{pendingPaymentOrder.totalAmount.toFixed(2)})
+                </a>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(upiConfig.upiVpa);
+                    showToast(`UPI ID copied: ${upiConfig.upiVpa}`, "info");
+                  }}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{ background: "#f8fafc", borderColor: "#cbd5e1", color: "#334155" }}
+                >
+                  <span>Copy UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
+                </button>
+              </div>
             )}
 
             {/* UTR Reference form */}
@@ -1054,25 +1063,38 @@ export const CustomerDashboard: React.FC = () => {
               Settling: ₹{parseFloat(ledgerPayAmount).toFixed(2)}
             </div>
 
-            {/* Mobile: UPI deep link | Desktop: QR */}
-            {isMobile ? (
-              <a
-                href={ledgerUpiLink}
-                className="btn-primary w-full py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-3 mb-5 animate-gold-pulse"
-                style={{ textDecoration: "none" }}
-              >
-                <CreditCard className="w-6 h-6" />
-                Open UPI App & Pay ₹{parseFloat(ledgerPayAmount).toFixed(2)}
-              </a>
-            ) : (
-              <>
-                <div className="p-4 rounded-2xl mb-4" style={{ background: "#fffbf5", border: "2px solid rgba(249,115,22,0.2)" }}>
-                  <QRCodeSVG value={ledgerUpiLink} size={180} level="M" fgColor={SAI.maroon} bgColor="#fffbf5" />
-                </div>
-                <p className="text-xs mb-4 px-2" style={{ color: SAI.textMuted }}>
-                  Scan with Google Pay, PhonePe, or Paytm to settle your Khata
-                </p>
-              </>
+            {/* QR Code section (Visible on Mobile & Desktop) */}
+            <div className="p-4 rounded-2xl mb-3 flex flex-col items-center" style={{ background: "#fffbf5", border: "2px solid rgba(249,115,22,0.2)" }}>
+              <QRCodeSVG value={ledgerUpiLink} size={180} level="M" fgColor={SAI.maroon} bgColor="#fffbf5" />
+              <p className="text-[11px] font-semibold mt-2.5 text-center" style={{ color: SAI.textMuted }}>
+                Scan with Google Pay, PhonePe, Paytm or FamPay
+              </p>
+            </div>
+
+            {/* Mobile Actions: Open App / Copy UPI ID */}
+            {isMobile && (
+              <div className="w-full space-y-2 mb-4">
+                <a
+                  href={ledgerUpiLink}
+                  className="btn-primary w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                  style={{ textDecoration: "none" }}
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Open UPI App (₹{parseFloat(ledgerPayAmount).toFixed(2)})
+                </a>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(upiConfig.upiVpa);
+                    showToast(`UPI ID copied: ${upiConfig.upiVpa}`, "info");
+                  }}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{ background: "#f8fafc", borderColor: "#cbd5e1", color: "#334155" }}
+                >
+                  <span>Copy UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
+                </button>
+              </div>
             )}
 
             <form onSubmit={handleLedgerSettleSubmit} className="w-full space-y-3 text-left">
