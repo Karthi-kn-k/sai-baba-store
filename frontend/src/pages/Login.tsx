@@ -108,10 +108,15 @@ export const Login: React.FC = () => {
     setLoading(true);
     try {
       const type = authMode === "RECOVERY" ? "RECOVERY" : "LOGIN";
-      await authApi.sendOtp({ identifier: identifier.trim(), type });
+      const res: any = await authApi.sendOtp({ identifier: identifier.trim(), type });
       setOtpSent(true);
       startResendCountdown();
-      showToast(`Verification code sent to ${identifier.trim()}`, "success");
+
+      if (res?.otp) {
+        showToast(`[Demo Mode] OTP for ${identifier.trim()}: ${res.otp}`, "success");
+      } else {
+        showToast(res?.message || `Verification code sent to ${identifier.trim()}`, "success");
+      }
     } catch (err: any) {
       showToast(err.message || "Failed to send OTP code.", "error");
     } finally {
