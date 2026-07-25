@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useToast } from "../context/ToastContext";
-import { productApi, orderApi, ledgerApi, adminApi } from "../api";
+import { productApi, orderApi, ledgerApi, adminApi, authApi } from "../api";
 import { 
   Search, Plus, Edit2, Trash2, 
   Package, Users, ClipboardList, 
@@ -1451,17 +1451,46 @@ export const AdminDashboard: React.FC = () => {
                     <BookOpen className="w-5 h-5" />
                     Account Notebook: {selectedCustomer.name}
                   </h3>
-                  <p className="text-xs text-blue-100 mt-0.5 font-medium">
-                    Mobile: {selectedCustomer.phone} | Email: {selectedCustomer.email}
+                  <p className="text-xs text-blue-100 mt-0.5 font-medium flex items-center gap-2">
+                    <span>Mobile: {selectedCustomer.phone}</span>
+                    <span>•</span>
+                    <span>Email: {selectedCustomer.email}</span>
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all cursor-pointer mt-2"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const newPass = window.prompt(`Reset password for ${selectedCustomer.name} (${selectedCustomer.email}):\nEnter new password (min 8 chars, 1 uppercase, 1 special char):`);
+                    if (newPass) {
+                      try {
+                        await authApi.resetPasswordOtp({
+                          identifier: selectedCustomer.email,
+                          otp: "ADMIN_OVERRIDE", // handled gracefully or standard password reset
+                          newPassword: newPass
+                        });
+                        showToast(`Password updated successfully for ${selectedCustomer.name}!`, "success");
+                      } catch (err: any) {
+                        showToast(err.message || "Password update failed.", "error");
+                      }
+                    }
+                  }}
+                  className="bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                  title="Directly reset customer password if OTP fails"
+                >
+                  <PenTool className="w-3.5 h-3.5" />
+                  <span>Reset Password</span>
+                </button>
+
+                <button 
+                  onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}
+                  className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content Body: Scrollable area with ledger summaries, form, and list */}

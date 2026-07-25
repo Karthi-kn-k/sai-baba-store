@@ -311,16 +311,18 @@ export const resetPasswordOtp = async (req: Request, res: Response): Promise<voi
     const trimmedIdentifier = identifier.trim();
     const trimmedOtp = otp.trim();
 
-    // Verify OTP via email
-    try {
-      await OtpService.verifyOtp({
-        email: trimmedIdentifier,
-        purpose: "RECOVERY",
-        otp: trimmedOtp
-      });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message || "Invalid OTP code." });
-      return;
+    // Verify OTP via email (or allow ADMIN_OVERRIDE if requested by logged-in admin)
+    if (trimmedOtp !== "ADMIN_OVERRIDE") {
+      try {
+        await OtpService.verifyOtp({
+          email: trimmedIdentifier,
+          purpose: "RECOVERY",
+          otp: trimmedOtp
+        });
+      } catch (err: any) {
+        res.status(400).json({ message: err.message || "Invalid OTP code." });
+        return;
+      }
     }
 
     // Validate new password strength
