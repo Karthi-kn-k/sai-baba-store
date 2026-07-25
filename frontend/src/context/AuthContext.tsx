@@ -77,8 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const data = await authApi.login(credentials);
       setTokens(data.accessToken, data.refreshToken);
-      const savedAvatar = localStorage.getItem(`user_avatar_${data.user.id}`);
-      setUser({ ...data.user, avatarUrl: savedAvatar || data.user.avatarUrl || null });
+      setUser(data.user);
     } catch (error) {
       setLoading(false);
       throw error;
@@ -92,8 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const data = await authApi.signup(userData);
       setTokens(data.accessToken, data.refreshToken);
-      const savedAvatar = localStorage.getItem(`user_avatar_${data.user.id}`);
-      setUser({ ...data.user, avatarUrl: savedAvatar || data.user.avatarUrl || null });
+      setUser(data.user);
     } catch (error) {
       setLoading(false);
       throw error;
@@ -104,8 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithTokens = (payload: { accessToken: string; refreshToken: string; user: User }) => {
     setTokens(payload.accessToken, payload.refreshToken);
-    const savedAvatar = localStorage.getItem(`user_avatar_${payload.user.id}`);
-    setUser({ ...payload.user, avatarUrl: savedAvatar || payload.user.avatarUrl || null });
+    setUser(payload.user);
   };
 
   const logout = async () => {

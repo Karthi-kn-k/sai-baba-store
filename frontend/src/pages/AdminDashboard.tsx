@@ -1486,9 +1486,10 @@ export const AdminDashboard: React.FC = () => {
 
                 <button 
                   onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}
-                  className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all cursor-pointer"
+                  className="bg-white hover:bg-slate-100 text-slate-900 p-2 rounded-full transition-all cursor-pointer shadow-md flex items-center justify-center shrink-0 border border-slate-300"
+                  title="Close Notebook"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-slate-900 stroke-[3]" />
                 </button>
               </div>
             </div>
