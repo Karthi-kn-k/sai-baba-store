@@ -81,9 +81,12 @@ export const CustomerDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [ledgerModalOpen, setLedgerModalOpen] = useState(false);
 
-  const [upiConfig, setUpiConfig] = useState<{ upiVpa: string; upiName: string }>({
-    upiVpa: "karthikn221005@oksbi",
-    upiName: "karthi keyan",
+  const [upiConfig, setUpiConfig] = useState<{ upiVpa: string; upiName: string }>(() => {
+    const localVpa = localStorage.getItem("saibaba_merchant_vpa");
+    return {
+      upiVpa: localVpa || "karthikn221005@oksbi",
+      upiName: "karthi keyan",
+    };
   });
 
   /* ── Data loading ── */
@@ -97,8 +100,12 @@ export const CustomerDashboard: React.FC = () => {
       const ledData = await ledgerApi.getLedger();
       setLedger(ledData);
       const config = await fetch("/api/config").then(r => r.json()).catch(() => ({}));
-      if (config.upiVpa && config.upiName)
+      const localVpa = localStorage.getItem("saibaba_merchant_vpa");
+      if (localVpa) {
+        setUpiConfig({ upiVpa: localVpa, upiName: config.upiName || "karthi keyan" });
+      } else if (config.upiVpa && config.upiName) {
         setUpiConfig({ upiVpa: config.upiVpa, upiName: config.upiName });
+      }
     } catch (err: any) {
       showToast(err.message || "Failed to load data.", "error");
     } finally {
