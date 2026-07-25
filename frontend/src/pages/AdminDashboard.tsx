@@ -4,7 +4,7 @@ import { productApi, orderApi, ledgerApi, adminApi } from "../api";
 import { 
   Search, Plus, Edit2, Trash2, 
   Package, Users, ClipboardList, 
-  Check, X, ShieldAlert, PlusCircle, PenTool, BookOpen
+  Check, X, ShieldAlert, PlusCircle, PenTool, BookOpen, User
 } from "lucide-react";
 
 export const AdminDashboard: React.FC = () => {
@@ -1438,14 +1438,23 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </div>
 
-              <div className="mt-2">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  Khata Ledger Notebook: {selectedCustomer.name}
-                </h3>
-                <p className="text-xs text-blue-100 mt-1 font-medium">
-                  Contact: {selectedCustomer.phone} | {selectedCustomer.email}
-                </p>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white/40 shadow-sm flex items-center justify-center bg-orange-500 text-white font-bold">
+                  {selectedCustomer.avatarUrl ? (
+                    <img src={selectedCustomer.avatarUrl} alt={selectedCustomer.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Account Notebook: {selectedCustomer.name}
+                  </h3>
+                  <p className="text-xs text-blue-100 mt-0.5 font-medium">
+                    Mobile: {selectedCustomer.phone} | Email: {selectedCustomer.email}
+                  </p>
+                </div>
               </div>
               <button 
                 onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}

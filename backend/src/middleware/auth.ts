@@ -39,10 +39,11 @@ export const requireAuth = async (
       where: { id: decoded.id },
       select: { 
         id: true, 
+        name: true, 
         email: true, 
         phone: true, 
         role: true, 
-        name: true,
+        avatarUrl: true,
         hasAccountNotebook: true,
         notebookRequestStatus: true
       }

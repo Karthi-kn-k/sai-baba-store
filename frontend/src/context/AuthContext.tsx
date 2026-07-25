@@ -30,28 +30,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const updateUser = (updatedUser: Partial<User>) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const newUser = { ...prev, ...updatedUser };
-      // Save avatar per user ID to localStorage so changes persist across sessions
-      if (updatedUser.avatarUrl !== undefined) {
-        if (updatedUser.avatarUrl) {
-          localStorage.setItem(`user_avatar_${prev.id}`, updatedUser.avatarUrl);
-        } else {
-          localStorage.removeItem(`user_avatar_${prev.id}`);
+  const updateUser = async (updatedUser: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updatedUser } : null));
+    if (updatedUser.avatarUrl !== undefined) {
+      try {
+        const res = await authApi.updateProfile({ avatarUrl: updatedUser.avatarUrl });
+        if (res.user) {
+          setUser(res.user);
         }
+      } catch (err) {
+        console.error("Failed to sync profile to cloud:", err);
       }
-      return newUser;
-    });
+    }
   };
 
   const fetchProfile = async () => {
     try {
       if (getAccessToken()) {
         const data = await authApi.getMe();
-        const savedAvatar = localStorage.getItem(`user_avatar_${data.user.id}`);
-        setUser({ ...data.user, avatarUrl: savedAvatar || data.user.avatarUrl || null });
+        setUser(data.user);
       }
     } catch (err) {
       console.error("Failed to load user profile:", err);

@@ -148,6 +148,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        avatarUrl: user.avatarUrl,
         hasAccountNotebook: user.hasAccountNotebook,
         notebookRequestStatus: user.notebookRequestStatus
       },
@@ -346,5 +347,35 @@ export const resetPasswordOtp = async (req: Request, res: Response): Promise<voi
   } catch (error: any) {
     console.error("Reset Password OTP Error:", error);
     res.status(500).json({ message: "Failed to reset password." });
+  }
+};
+
+// Update User Profile (e.g. Avatar Photo)
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userReq = (req as any).user;
+    const { avatarUrl } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userReq.id },
+      data: { avatarUrl: avatarUrl !== undefined ? avatarUrl : null }
+    });
+
+    res.status(200).json({
+      message: "Profile updated successfully.",
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        avatarUrl: updatedUser.avatarUrl,
+        hasAccountNotebook: updatedUser.hasAccountNotebook,
+        notebookRequestStatus: updatedUser.notebookRequestStatus
+      }
+    });
+  } catch (error: any) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({ message: "Failed to update profile." });
   }
 };

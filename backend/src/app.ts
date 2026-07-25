@@ -35,12 +35,56 @@ app.get("/health", (req: Request, res: Response) => {
 import { requireAuth, requireRole } from "./middleware/auth";
 import { adminNotifications } from "./utils/notifications";
 
-// Serve dynamic merchant configs
-app.get("/api/config", (req: Request, res: Response) => {
-  res.status(200).json({
-    upiVpa: process.env.UPI_MERCHANT_VPA || "karthikn221005@oksbi",
-    upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan"
-  });
+import prisma from "./db";
+
+// Serve dynamic merchant configs & store status from global DB
+app.get("/api/config", async (req: Request, res: Response) => {
+  try {
+    let settings = await prisma.storeSettings.findUnique({ where: { id: "global_settings" } });
+    if (!settings) {
+      settings = await prisma.storeSettings.create({
+        data: {
+          id: "global_settings",
+          isShopOpen: true,
+          upiVpa: process.env.UPI_MERCHANT_VPA || "karthikn221005@oksbi",
+          upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan"
+        }
+      });
+    }
+    res.status(200).json(settings);
+  } catch (error: any) {
+    res.status(200).json({
+      isShopOpen: true,
+      upiVpa: process.env.UPI_MERCHANT_VPA || "karthikn221005@oksbi",
+      upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan"
+    });
+  }
+});
+
+// Admin update store settings globally
+app.post("/api/config", requireAuth, requireRole("ADMIN"), async (req: Request, res: Response) => {
+  try {
+    const { isShopOpen, upiVpa, upiName } = req.body;
+    const updateData: any = {};
+    if (typeof isShopOpen === "boolean") updateData.isShopOpen = isShopOpen;
+    if (upiVpa) updateData.upiVpa = upiVpa.trim();
+    if (upiName) updateData.upiName = upiName.trim();
+
+    const settings = await prisma.storeSettings.upsert({
+      where: { id: "global_settings" },
+      update: updateData,
+      create: {
+        id: "global_settings",
+        isShopOpen: typeof isShopOpen === "boolean" ? isShopOpen : true,
+        upiVpa: upiVpa ? upiVpa.trim() : "karthikn221005@oksbi",
+        upiName: upiName ? upiName.trim() : "karthi keyan"
+      }
+    });
+
+    res.status(200).json({ message: "Store settings updated globally across all devices.", settings });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || "Failed to update settings." });
+  }
 });
 
 // Get admin in-app notifications

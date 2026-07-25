@@ -22,13 +22,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
     return localStorage.getItem("saibaba_merchant_vpa") || "karthikn221005@oksbi";
   });
 
-  const handleSaveUpiVpa = () => {
+  const handleSaveUpiVpa = async () => {
     if (!upiVpaInput.trim()) {
       showToast("UPI ID cannot be empty.", "warning");
       return;
     }
-    localStorage.setItem("saibaba_merchant_vpa", upiVpaInput.trim());
-    showToast(`Store UPI ID updated to ${upiVpaInput.trim()}`, "success");
+    const token = localStorage.getItem("accessToken");
+    try {
+      await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ upiVpa: upiVpaInput.trim() })
+      });
+      localStorage.setItem("saibaba_merchant_vpa", upiVpaInput.trim());
+      showToast(`Store UPI ID updated globally to ${upiVpaInput.trim()}`, "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to update UPI ID on cloud server.", "error");
+    }
   };
 
   // Add Admin form state inside Profile Modal

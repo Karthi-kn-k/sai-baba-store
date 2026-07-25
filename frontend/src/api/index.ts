@@ -97,7 +97,9 @@ export const authApi = {
   verifyOtpLogin: async (body: { identifier: string; otp: string }) => 
     request("/auth/verify-otp-login", { method: "POST", body: JSON.stringify(body) }),
   resetPasswordOtp: async (body: { identifier: string; otp: string; newPassword: string }) => 
-    request("/auth/reset-password-otp", { method: "POST", body: JSON.stringify(body) })
+    request("/auth/reset-password-otp", { method: "POST", body: JSON.stringify(body) }),
+  updateProfile: async (body: { avatarUrl?: string | null }) =>
+    request("/auth/profile", { method: "PATCH", body: JSON.stringify(body) })
 };
 
 // 2. Product API

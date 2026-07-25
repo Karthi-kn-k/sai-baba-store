@@ -22,7 +22,7 @@ export const getCustomerLedger = async (req: AuthenticatedRequest, res: Response
 
     const customer = await prisma.user.findUnique({
       where: { id: customerId },
-      select: { id: true, name: true, email: true, phone: true }
+      select: { id: true, name: true, email: true, phone: true, avatarUrl: true }
     });
 
     if (!customer) {
@@ -76,6 +76,7 @@ export const getLedgerSummary = async (req: AuthenticatedRequest, res: Response)
         name: true, 
         email: true, 
         phone: true, 
+        avatarUrl: true,
         createdAt: true,
         hasAccountNotebook: true,
         notebookRequestStatus: true

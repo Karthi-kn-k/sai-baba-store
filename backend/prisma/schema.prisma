@@ -51,6 +51,7 @@ model User {
   phone                 String        @unique
   passwordHash          String
   role                  Role          @default(CUSTOMER)
+  avatarUrl             String?
   hasAccountNotebook    Boolean       @default(false)
   notebookRequestStatus String        @default("NONE")
   createdAt             DateTime      @default(now())
@@ -150,4 +151,12 @@ model OtpVerification {
   lastResentAt DateTime @default(now())
   verified     Boolean  @default(false)
   createdAt    DateTime @default(now())
+}
+
+model StoreSettings {
+  id         String   @id @default("global_settings")
+  isShopOpen Boolean  @default(true)
+  upiVpa     String   @default("karthikn221005@oksbi")
+  upiName    String   @default("karthi keyan")
+  updatedAt  DateTime @updatedAt
 }
