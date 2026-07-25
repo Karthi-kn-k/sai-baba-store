@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useShop } from "../context/ShopContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
-import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff } from "lucide-react";
+import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard } from "lucide-react";
 
 interface NavbarProps {
   onCartToggle?: () => void;
@@ -16,6 +16,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
   const { isShopOpen, toggleShopOpen } = useShop();
   const { showToast } = useToast();
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // Store UPI ID Management state
+  const [upiVpaInput, setUpiVpaInput] = useState(() => {
+    return localStorage.getItem("saibaba_merchant_vpa") || "karthikn221005@oksbi";
+  });
+
+  const handleSaveUpiVpa = () => {
+    if (!upiVpaInput.trim()) {
+      showToast("UPI ID cannot be empty.", "warning");
+      return;
+    }
+    localStorage.setItem("saibaba_merchant_vpa", upiVpaInput.trim());
+    showToast(`Store UPI ID updated to ${upiVpaInput.trim()}`, "success");
+  };
 
   // Add Admin form state inside Profile Modal
   const [showAddAdmin, setShowAddAdmin] = useState(false);
@@ -344,6 +358,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
                   <p className="text-xs font-semibold text-slate-900">{user.role} · Active</p>
                 </div>
               </div>
+
+              {/* Admin Only: Store UPI VPA Management Field */}
+              {user.role === "ADMIN" && (
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                      <CreditCard className="w-3.5 h-3.5 text-orange-600" />
+                      Store UPI ID (VPA)
+                    </p>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Active</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={upiVpaInput}
+                      onChange={(e) => setUpiVpaInput(e.target.value)}
+                      placeholder="e.g. your_name@oksbi"
+                      className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveUpiVpa}
+                      className="px-3 py-1 rounded-lg text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+                      style={{ background: "#7f1d1d" }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Payments & QR codes will direct money to this UPI ID.</p>
+                </div>
+              )}
             </div>
 
             {/* Admin Only: Option to Add Another Admin Account */}
