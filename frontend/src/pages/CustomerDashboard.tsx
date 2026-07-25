@@ -99,7 +99,7 @@ export const CustomerDashboard: React.FC = () => {
       setOrders(ordData.orders);
       const ledData = await ledgerApi.getLedger();
       setLedger(ledData);
-      const config = await fetch("/api/config").then(r => r.json()).catch(() => ({}));
+      const config = await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`).then(r => r.json()).catch(() => ({}));
       const localVpa = localStorage.getItem("saibaba_merchant_vpa");
       if (localVpa) {
         setUpiConfig({ upiVpa: localVpa, upiName: config.upiName || "karthi keyan" });

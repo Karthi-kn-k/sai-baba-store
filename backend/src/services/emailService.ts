@@ -16,7 +16,9 @@ export class EmailService {
       host,
       port,
       secure: port === 465,
-      auth: { user, pass }
+      auth: { user, pass },
+      connectionTimeout: 5000, // 5 seconds connection timeout
+      socketTimeout: 5000       // 5 seconds socket timeout
     });
   }
 
