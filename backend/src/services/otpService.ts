@@ -76,15 +76,12 @@ export class OtpService {
     // Send via email
     const emailSent = await EmailService.sendOtp(email, rawOtp, purpose);
 
-    // If SMTP is configured and email was dispatched, hide OTP from response (production mode)
-    const hasSmtp = !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
-    const isMockMode = !hasSmtp || !emailSent;
+    if (!emailSent) {
+      throw new Error(`Email delivery to ${email} failed. Please ensure your email address is valid or contact Store Admin.`);
+    }
 
     return {
-      message: emailSent
-        ? `OTP sent successfully to ${email}.`
-        : `OTP generated. Email delivery failed — check SMTP configuration.`,
-      otp: isMockMode ? rawOtp : undefined
+      message: `OTP sent successfully to ${email}. Check your inbox or spam folder.`
     };
   }
 

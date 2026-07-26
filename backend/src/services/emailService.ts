@@ -3,22 +3,25 @@ import nodemailer from "nodemailer";
 export class EmailService {
   private static getTransporter() {
     const host = process.env.SMTP_HOST || "smtp.gmail.com";
-    const port = parseInt(process.env.SMTP_PORT || "587");
+    const port = parseInt(process.env.SMTP_PORT || "465");
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
     if (!user || !pass) {
-      console.warn("[EmailService WARNING] SMTP credentials are not configured in your .env file.");
+      console.warn("[EmailService WARNING] SMTP credentials are not configured in process.env.");
       return null;
     }
 
     return nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
-      auth: { user, pass },
-      connectionTimeout: 5000, // 5 seconds connection timeout
-      socketTimeout: 5000       // 5 seconds socket timeout
+      secure: port === 465, // true for 465, false for other ports
+      auth: { user: user.trim(), pass: pass.trim() },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 10000,
+      socketTimeout: 10000
     });
   }
 
