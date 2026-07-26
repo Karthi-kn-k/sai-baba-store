@@ -18,6 +18,7 @@ export const AdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [customersSummary, setCustomersSummary] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasNewOrderAlert, setHasNewOrderAlert] = useState(false);
 
   // Search/Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,7 +146,9 @@ export const AdminDashboard: React.FC = () => {
       if (ordData?.orders) {
         if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
           playNewOrderChime();
-          showToast("🔔 New Customer Order Received!", "success");
+          setHasNewOrderAlert(true);
+          setTimeout(() => setHasNewOrderAlert(false), 10000); // Blink for 10s
+          showToast("⚡ NEW ORDER ARRIVED!", "success");
         }
         prevOrderCountRef.current = ordData.orders.length;
         setOrders(ordData.orders);
@@ -455,14 +458,21 @@ export const AdminDashboard: React.FC = () => {
         </div>
         <div
           onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
-          className="rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4 cursor-pointer transition-all hover-lift"
-          style={{ background: "white", border: "2px solid rgba(249,115,22,0.15)", boxShadow: "0 2px 12px rgba(249,115,22,0.07)" }}
+          className={`rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4 cursor-pointer transition-all hover-lift ${
+            hasNewOrderAlert ? "animate-pulse border-4 border-amber-400 shadow-2xl scale-[1.02]" : ""
+          }`}
+          style={hasNewOrderAlert 
+            ? { background: "linear-gradient(135deg, #fef3c7, #fde68a)", borderColor: "#f59e0b", boxShadow: "0 0 25px rgba(245,158,11,0.6)" }
+            : { background: "white", border: "2px solid rgba(249,115,22,0.15)", boxShadow: "0 2px 12px rgba(249,115,22,0.07)" }
+          }
         >
-          <div className="p-3 rounded-xl shrink-0" style={{ background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
+          <div className="p-3 rounded-xl shrink-0" style={{ background: hasNewOrderAlert ? "#f59e0b" : "rgba(217,119,6,0.1)", color: hasNewOrderAlert ? "white" : "#d97706" }}>
             <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] sm:text-xs uppercase font-bold tracking-wider" style={{ color: "#a16207" }}>Pending Orders</p>
+            <p className="text-[10px] sm:text-xs uppercase font-bold tracking-wider" style={{ color: hasNewOrderAlert ? "#78350f" : "#a16207" }}>
+              {hasNewOrderAlert ? "⚡ NEW ORDER ARRIVED!" : "Pending Orders"}
+            </p>
             <p className="text-xl sm:text-2xl font-extrabold mt-0.5" style={{ color: "#7f1d1d" }}>
               {orders.filter((o) => o.status === "PLACED" || o.status === "CONFIRMED").length} orders
             </p>
