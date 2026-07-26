@@ -2,8 +2,6 @@ import nodemailer from "nodemailer";
 
 export class EmailService {
   private static getTransporter() {
-    const host = process.env.SMTP_HOST || "smtp.gmail.com";
-    const port = parseInt(process.env.SMTP_PORT || "465");
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
@@ -13,15 +11,11 @@ export class EmailService {
     }
 
     return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465, // true for 465, false for other ports
-      auth: { user: user.trim(), pass: pass.trim() },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000,
-      socketTimeout: 10000
+      service: "gmail",
+      auth: {
+        user: user.trim(),
+        pass: pass.trim()
+      }
     });
   }
 
