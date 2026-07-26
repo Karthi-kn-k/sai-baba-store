@@ -3,14 +3,9 @@
   "name": "Sai Baba Store - Grocery & Account Notes",
   "icons": [
     {
-      "src": "/pwa-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512 192x192 48x48",
       "purpose": "any maskable"
     }
   ],

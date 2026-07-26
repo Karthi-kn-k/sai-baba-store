@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
 import { 
   Mail, Lock, User, Phone, LogIn, UserPlus, 
-  Key, ArrowLeft, ShieldCheck, Eye, EyeOff 
+  ArrowLeft, ShieldCheck, Eye, EyeOff 
 } from "lucide-react";
 
 export const Login: React.FC = () => {
@@ -428,16 +428,6 @@ export const Login: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="text-center mt-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleAuthMode("OTP_LOGIN")}
-                    className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-bold bg-transparent border-0 cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <Key className="w-3.5 h-3.5" />
-                    Sign In with Email OTP instead
-                  </button>
-                </div>
               </>
             )}
 
