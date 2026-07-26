@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useShop } from "../context/ShopContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
-import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard, Volume2 } from "lucide-react";
+import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard } from "lucide-react";
 
 interface NavbarProps {
   onCartToggle?: () => void;
@@ -17,10 +17,35 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
   const { showToast } = useToast();
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Store UPI ID Management state
+  // Store UPI ID & Admin Phone State
   const [upiVpaInput, setUpiVpaInput] = useState(() => {
     return localStorage.getItem("saibaba_merchant_vpa") || "karthikn221005@oksbi";
   });
+  const [adminPhoneInput, setAdminPhoneInput] = useState(() => {
+    return localStorage.getItem("saibaba_admin_phone") || "9123456789";
+  });
+
+  const handleSaveAdminPhone = async () => {
+    if (!adminPhoneInput.trim()) {
+      showToast("Admin Phone Number cannot be empty.", "warning");
+      return;
+    }
+    const token = localStorage.getItem("accessToken");
+    try {
+      await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ adminPhone: adminPhoneInput.trim() })
+      });
+      localStorage.setItem("saibaba_admin_phone", adminPhoneInput.trim());
+      showToast(`Admin Contact Phone updated globally to ${adminPhoneInput.trim()}`, "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to update phone on cloud server.", "error");
+    }
+  };
 
   const handleSaveUpiVpa = async () => {
     if (!upiVpaInput.trim()) {
@@ -403,37 +428,34 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
                 </div>
               )}
 
-              {/* Admin Only: Order Notification Sound Preference */}
+              {/* Admin Only: Store Public Contact Phone Field */}
               {user.role === "ADMIN" && (
-                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-xs space-y-2">
-                  <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
-                    <Volume2 className="w-3.5 h-3.5 text-orange-600" />
-                    New Order Sound Alert
-                  </p>
-                  <select
-                    value={localStorage.getItem("admin_order_sound_type") || "DEFAULT"}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      localStorage.setItem("admin_order_sound_type", val);
-                      showToast(`Order sound set to ${val === "DEFAULT" ? "Default Chime" : "Custom Ringtone"}`, "success");
-                    }}
-                    className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
-                  >
-                    <option value="DEFAULT">🎵 Default Double-Chime Tone (Synthesized)</option>
-                    <option value="CUSTOM">🎶 Custom Audio Sound File / Ringtone URL</option>
-                  </select>
-                  {localStorage.getItem("admin_order_sound_type") === "CUSTOM" && (
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-orange-600" />
+                      Public Store Admin Phone
+                    </p>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Visible to Customers</span>
+                  </div>
+                  <div className="flex gap-2">
                     <input
                       type="text"
-                      defaultValue={localStorage.getItem("admin_custom_sound_url") || ""}
-                      onBlur={(e) => {
-                        localStorage.setItem("admin_custom_sound_url", e.target.value.trim());
-                        showToast("Custom sound file URL saved!", "info");
-                      }}
-                      placeholder="Paste MP3/WAV Audio URL..."
-                      className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                      value={adminPhoneInput}
+                      onChange={(e) => setAdminPhoneInput(e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500"
                     />
-                  )}
+                    <button
+                      type="button"
+                      onClick={handleSaveAdminPhone}
+                      className="px-3 py-1 rounded-lg text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+                      style={{ background: "#7f1d1d" }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Customers will see this number in their Account Notebook view to contact you.</p>
                 </div>
               )}
             </div>

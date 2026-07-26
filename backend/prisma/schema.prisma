@@ -158,5 +158,6 @@ model StoreSettings {
   isShopOpen Boolean  @default(true)
   upiVpa     String   @default("karthikn221005@oksbi")
   upiName    String   @default("karthi keyan")
+  adminPhone String   @default("9123456789")
   updatedAt  DateTime @updatedAt
 }

@@ -47,7 +47,8 @@ app.get("/api/config", async (req: Request, res: Response) => {
           id: "global_settings",
           isShopOpen: true,
           upiVpa: process.env.UPI_MERCHANT_VPA || "karthikn221005@oksbi",
-          upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan"
+          upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan",
+          adminPhone: "9123456789"
         }
       });
     }
@@ -56,7 +57,8 @@ app.get("/api/config", async (req: Request, res: Response) => {
     res.status(200).json({
       isShopOpen: true,
       upiVpa: process.env.UPI_MERCHANT_VPA || "karthikn221005@oksbi",
-      upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan"
+      upiName: process.env.UPI_MERCHANT_NAME || "karthi keyan",
+      adminPhone: "9123456789"
     });
   }
 });
@@ -64,11 +66,12 @@ app.get("/api/config", async (req: Request, res: Response) => {
 // Admin update store settings globally
 app.post("/api/config", requireAuth, requireRole("ADMIN"), async (req: Request, res: Response) => {
   try {
-    const { isShopOpen, upiVpa, upiName } = req.body;
+    const { isShopOpen, upiVpa, upiName, adminPhone } = req.body;
     const updateData: any = {};
     if (typeof isShopOpen === "boolean") updateData.isShopOpen = isShopOpen;
     if (upiVpa) updateData.upiVpa = upiVpa.trim();
     if (upiName) updateData.upiName = upiName.trim();
+    if (adminPhone) updateData.adminPhone = adminPhone.trim();
 
     const settings = await prisma.storeSettings.upsert({
       where: { id: "global_settings" },
@@ -77,7 +80,8 @@ app.post("/api/config", requireAuth, requireRole("ADMIN"), async (req: Request, 
         id: "global_settings",
         isShopOpen: typeof isShopOpen === "boolean" ? isShopOpen : true,
         upiVpa: upiVpa ? upiVpa.trim() : "karthikn221005@oksbi",
-        upiName: upiName ? upiName.trim() : "karthi keyan"
+        upiName: upiName ? upiName.trim() : "karthi keyan",
+        adminPhone: adminPhone ? adminPhone.trim() : "9123456789"
       }
     });
 

@@ -8,7 +8,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   Search, ShoppingCart, Trash2, Plus, Minus, CreditCard,
   ShoppingBag, X, IndianRupee, AlertCircle,
-  BookOpen, Package, History as LedgerIcon, Clock
+  BookOpen, Package, History as LedgerIcon, Clock, Phone
 } from "lucide-react";
 
 /* ── Device detection hook ── */
@@ -81,11 +81,13 @@ export const CustomerDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [ledgerModalOpen, setLedgerModalOpen] = useState(false);
 
-  const [upiConfig, setUpiConfig] = useState<{ upiVpa: string; upiName: string }>(() => {
+  const [upiConfig, setUpiConfig] = useState<{ upiVpa: string; upiName: string; adminPhone: string }>(() => {
     const localVpa = localStorage.getItem("saibaba_merchant_vpa");
+    const localPhone = localStorage.getItem("saibaba_admin_phone");
     return {
       upiVpa: localVpa || "karthikn221005@oksbi",
       upiName: "karthi keyan",
+      adminPhone: localPhone || "9123456789"
     };
   });
 
@@ -101,11 +103,12 @@ export const CustomerDashboard: React.FC = () => {
       setLedger(ledData);
       const config = await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`).then(r => r.json()).catch(() => ({}));
       const localVpa = localStorage.getItem("saibaba_merchant_vpa");
-      if (localVpa) {
-        setUpiConfig({ upiVpa: localVpa, upiName: config.upiName || "karthi keyan" });
-      } else if (config.upiVpa && config.upiName) {
-        setUpiConfig({ upiVpa: config.upiVpa, upiName: config.upiName });
-      }
+      const localPhone = localStorage.getItem("saibaba_admin_phone");
+      setUpiConfig({
+        upiVpa: localVpa || config.upiVpa || "karthikn221005@oksbi",
+        upiName: config.upiName || "karthi keyan",
+        adminPhone: localPhone || config.adminPhone || "9123456789"
+      });
     } catch (err: any) {
       showToast(err.message || "Failed to load data.", "error");
     } finally {
@@ -1151,7 +1154,10 @@ export const CustomerDashboard: React.FC = () => {
                   <BookOpen className="w-5 h-5" />
                   Account Note — Digital Ledger
                 </h3>
-                <p className="text-xs mt-1" style={{ color: "rgba(253,230,138,0.65)" }}>Full history of purchases and payments</p>
+                <p className="text-xs mt-1 font-medium flex items-center gap-1.5" style={{ color: "rgba(253,230,138,0.9)" }}>
+                  <Phone className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Contact Store Admin: <strong>{upiConfig?.adminPhone || "9123456789"}</strong> (for password reset, account query)</span>
+                </p>
               </div>
               <button
                 onClick={() => setLedgerModalOpen(false)}
