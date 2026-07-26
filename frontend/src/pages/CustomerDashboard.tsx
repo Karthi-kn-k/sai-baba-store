@@ -987,17 +987,15 @@ export const CustomerDashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Mobile Actions: Open App / Copy UPI ID */}
+            {/* Mobile Actions: Copy UPI ID instruction note */}
             {isMobile && (
               <div className="w-full space-y-2 mb-4">
-                <a
-                  href={upiDeepLink}
-                  className="btn-primary w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
-                  style={{ textDecoration: "none" }}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Open UPI App (₹{pendingPaymentOrder.totalAmount.toFixed(2)})
-                </a>
+                <div className="p-3 rounded-xl bg-orange-50 border border-orange-200 text-center">
+                  <p className="text-xs font-bold text-orange-900 mb-1">💡 Payment Note:</p>
+                  <p className="text-[11px] text-orange-800 leading-snug">
+                    Copy the Store UPI ID below, open your UPI App (GPay / PhonePe / Paytm / FamPay), paste &amp; send ₹{pendingPaymentOrder.totalAmount.toFixed(2)}.
+                  </p>
+                </div>
                 
                 <button
                   type="button"
@@ -1005,10 +1003,11 @@ export const CustomerDashboard: React.FC = () => {
                     navigator.clipboard.writeText(upiConfig.upiVpa);
                     showToast(`UPI ID copied: ${upiConfig.upiVpa}`, "info");
                   }}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-1.5"
-                  style={{ background: "#f8fafc", borderColor: "#cbd5e1", color: "#334155" }}
+                  className="w-full py-3 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                  style={{ background: "#7f1d1d", borderColor: "#7f1d1d", color: "#fde68a" }}
                 >
-                  <span>Copy UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Copy Store UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
                 </button>
               </div>
             )}
@@ -1078,17 +1077,15 @@ export const CustomerDashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Mobile Actions: Open App / Copy UPI ID */}
+            {/* Mobile Actions: Copy UPI ID instruction note */}
             {isMobile && (
               <div className="w-full space-y-2 mb-4">
-                <a
-                  href={ledgerUpiLink}
-                  className="btn-primary w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
-                  style={{ textDecoration: "none" }}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Open UPI App (₹{parseFloat(ledgerPayAmount).toFixed(2)})
-                </a>
+                <div className="p-3 rounded-xl bg-orange-50 border border-orange-200 text-center">
+                  <p className="text-xs font-bold text-orange-900 mb-1">💡 Payment Note:</p>
+                  <p className="text-[11px] text-orange-800 leading-snug">
+                    Copy the Store UPI ID below, open your UPI App (GPay / PhonePe / Paytm / FamPay), paste &amp; send ₹{parseFloat(ledgerPayAmount || "0").toFixed(2)}.
+                  </p>
+                </div>
                 
                 <button
                   type="button"
@@ -1096,10 +1093,11 @@ export const CustomerDashboard: React.FC = () => {
                     navigator.clipboard.writeText(upiConfig.upiVpa);
                     showToast(`UPI ID copied: ${upiConfig.upiVpa}`, "info");
                   }}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-1.5"
-                  style={{ background: "#f8fafc", borderColor: "#cbd5e1", color: "#334155" }}
+                  className="w-full py-3 rounded-xl text-xs font-bold border cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                  style={{ background: "#7f1d1d", borderColor: "#7f1d1d", color: "#fde68a" }}
                 >
-                  <span>Copy UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Copy Store UPI ID: <strong>{upiConfig.upiVpa}</strong></span>
                 </button>
               </div>
             )}

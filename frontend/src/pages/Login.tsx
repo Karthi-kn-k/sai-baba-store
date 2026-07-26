@@ -401,7 +401,7 @@ export const Login: React.FC = () => {
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Password</label>
                     <button
                       type="button"
-                      onClick={() => toggleAuthMode("RECOVERY")}
+                      onClick={() => showToast("Please contact the Store Admin in-person or via phone to reset your account password.", "info")}
                       className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white underline font-semibold bg-transparent border-0 cursor-pointer"
                     >
                       Forgot Password?

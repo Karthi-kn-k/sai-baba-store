@@ -92,6 +92,44 @@ export const AdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Sound alert chime ref for new incoming orders
+  const prevOrderCountRef = React.useRef<number | null>(null);
+
+  const playNewOrderChime = () => {
+    try {
+      const soundType = localStorage.getItem("admin_order_sound_type") || "DEFAULT";
+      const customUrl = localStorage.getItem("admin_custom_sound_url");
+
+      if (soundType === "CUSTOM" && customUrl) {
+        const audio = new Audio(customUrl);
+        audio.play().catch(() => playDefaultSynthesizedChime());
+      } else {
+        playDefaultSynthesizedChime();
+      }
+    } catch (e) {
+      console.warn("Audio chime playback error:", e);
+    }
+  };
+
+  const playDefaultSynthesizedChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    } catch (e) {
+      console.warn("Synthesized chime error:", e);
+    }
+  };
+
   const loadAllData = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
@@ -104,7 +142,14 @@ export const AdminDashboard: React.FC = () => {
       ]);
 
       if (prodData?.products) setProducts(prodData.products);
-      if (ordData?.orders) setOrders(ordData.orders);
+      if (ordData?.orders) {
+        if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
+          playNewOrderChime();
+          showToast("🔔 New Customer Order Received!", "success");
+        }
+        prevOrderCountRef.current = ordData.orders.length;
+        setOrders(ordData.orders);
+      }
       if (custData?.summary) setCustomersSummary(custData.summary);
       if (verifyData) setPendingVerifications(verifyData);
       if (reqData?.requests) setNotebookRequests(reqData.requests);

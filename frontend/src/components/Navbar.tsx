@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useShop } from "../context/ShopContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
-import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard } from "lucide-react";
+import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard, Volume2 } from "lucide-react";
 
 interface NavbarProps {
   onCartToggle?: () => void;
@@ -400,6 +400,40 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
                     </button>
                   </div>
                   <p className="text-[10px] text-slate-500">Payments & QR codes will direct money to this UPI ID.</p>
+                </div>
+              )}
+
+              {/* Admin Only: Order Notification Sound Preference */}
+              {user.role === "ADMIN" && (
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-xs space-y-2">
+                  <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                    <Volume2 className="w-3.5 h-3.5 text-orange-600" />
+                    New Order Sound Alert
+                  </p>
+                  <select
+                    value={localStorage.getItem("admin_order_sound_type") || "DEFAULT"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      localStorage.setItem("admin_order_sound_type", val);
+                      showToast(`Order sound set to ${val === "DEFAULT" ? "Default Chime" : "Custom Ringtone"}`, "success");
+                    }}
+                    className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                  >
+                    <option value="DEFAULT">🎵 Default Double-Chime Tone (Synthesized)</option>
+                    <option value="CUSTOM">🎶 Custom Audio Sound File / Ringtone URL</option>
+                  </select>
+                  {localStorage.getItem("admin_order_sound_type") === "CUSTOM" && (
+                    <input
+                      type="text"
+                      defaultValue={localStorage.getItem("admin_custom_sound_url") || ""}
+                      onBlur={(e) => {
+                        localStorage.setItem("admin_custom_sound_url", e.target.value.trim());
+                        showToast("Custom sound file URL saved!", "info");
+                      }}
+                      placeholder="Paste MP3/WAV Audio URL..."
+                      className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                    />
+                  )}
                 </div>
               )}
             </div>
