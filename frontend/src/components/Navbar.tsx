@@ -237,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
                   style={{ background: "#f97316", color: "white" }}
                 >
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                    <img src={user.avatarUrl} alt={user.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-4 h-4" />
                   )}
@@ -324,7 +324,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
                   style={{ background: "#f97316", borderColor: "#7f1d1d", color: "white" }}
                 >
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                    <img src={user.avatarUrl} alt={user.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-12 h-12" />
                   )}

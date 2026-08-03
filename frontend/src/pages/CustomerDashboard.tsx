@@ -611,7 +611,7 @@ export const CustomerDashboard: React.FC = () => {
                             <div className="grid grid-cols-2 gap-1 aspect-square rounded-xl overflow-hidden p-1 shadow-inner" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}>
                               {images.length > 0 ? (
                                 images.map((img, i) => (
-                                  <img key={i} src={img} alt="" className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" />
+                                  <img key={i} src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" />
                                 ))
                               ) : (
                                 <div className="col-span-2 row-span-2 flex items-center justify-center">
@@ -663,6 +663,8 @@ export const CustomerDashboard: React.FC = () => {
                             <img
                               src={p.imageUrl}
                               alt={p.name}
+                              loading="lazy"
+                              decoding="async"
                               className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                             />
                           ) : (
@@ -977,7 +979,7 @@ export const CustomerDashboard: React.FC = () => {
                         style={{ background: "white", border: "1px solid rgba(249,115,22,0.12)" }}
                       >
                         {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full" />
+                          <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="object-cover w-full h-full" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <ShoppingBag className="w-5 h-5" style={{ color: "rgba(249,115,22,0.3)" }} />

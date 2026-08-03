@@ -1136,7 +1136,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0" style={{ background: "#fffbf5", border: "1.5px solid rgba(249,115,22,0.25)" }}>
                             {p.imageUrl ? (
-                              <img src={p.imageUrl} alt={p.name} className="object-cover w-full h-full" />
+                              <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" className="object-cover w-full h-full" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <Package className="w-5 h-5" style={{ color: "#f97316" }} />
@@ -1464,7 +1464,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="mt-2 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white/40 shadow-sm flex items-center justify-center bg-orange-500 text-white font-bold">
                   {selectedCustomer.avatarUrl ? (
-                    <img src={selectedCustomer.avatarUrl} alt={selectedCustomer.name} className="w-full h-full object-cover" />
+                    <img src={selectedCustomer.avatarUrl} alt={selectedCustomer.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-6 h-6" />
                   )}
