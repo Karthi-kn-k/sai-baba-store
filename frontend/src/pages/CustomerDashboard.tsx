@@ -53,6 +53,17 @@ export const CustomerDashboard: React.FC = () => {
     }
   }, [isShopOpen]);
 
+  // State for selected price variant per product group name
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+
+  // Helper to extract base product name
+  const getBaseProductName = (name: string) => {
+    // Strip parentheses e.g. "milk biscuit (Pack)" -> "milk biscuit"
+    const cleaned = name.replace(/\s*\([^)]*\)/g, "").trim();
+    // Capitalize each word nicely e.g. "milk biscuit" -> "Milk Biscuit"
+    return cleaned.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+  };
+
   // Per-product qty picker
   const [productQtys, setProductQtys] = useState<Record<string, number>>({});
   const getProductQty = (id: string) => productQtys[id] ?? 1;
@@ -148,6 +159,14 @@ export const CustomerDashboard: React.FC = () => {
       return a.localeCompare(b);
     });
   }, [products]);
+
+  const categoryWithThumbnails = useMemo(() => {
+    return categories.map(cat => {
+      const catProducts = products.filter(p => p.category && p.category.toLowerCase().includes(cat.toLowerCase()));
+      const images = catProducts.map(p => p.imageUrl).filter(Boolean).slice(0, 4);
+      return { categoryName: cat, images, itemCount: catProducts.length };
+    });
+  }, [categories, products]);
   
   const filteredProducts = useMemo(() => {
     let result = products.filter(p => {
@@ -174,6 +193,37 @@ export const CustomerDashboard: React.FC = () => {
       return a.name.localeCompare(b.name);
     });
   }, [products, search, category]);
+
+  // Group variants by base name
+  const groupedProductsMap = useMemo(() => {
+    const map = new Map<string, any[]>();
+    filteredProducts.forEach(p => {
+      const baseName = getBaseProductName(p.name);
+      if (!map.has(baseName)) {
+        map.set(baseName, []);
+      }
+      map.get(baseName)!.push(p);
+    });
+    return map;
+  }, [filteredProducts]);
+
+  const displayProductGroups = useMemo(() => {
+    const groups: { baseName: string; variants: any[]; currentProduct: any }[] = [];
+    groupedProductsMap.forEach((rawVariants, baseName) => {
+      // Deduplicate variants that have the exact same price
+      const priceMap = new Map<number, any>();
+      rawVariants.forEach(v => {
+        if (!priceMap.has(v.price) || v.stockQty > priceMap.get(v.price).stockQty) {
+          priceMap.set(v.price, v);
+        }
+      });
+      const variants = Array.from(priceMap.values()).sort((a, b) => a.price - b.price);
+      const selectedId = selectedVariants[baseName];
+      const currentProduct = variants.find(v => v.id === selectedId) || variants[0];
+      groups.push({ baseName, variants, currentProduct });
+    });
+    return groups;
+  }, [groupedProductsMap, selectedVariants]);
 
   const monthsList = useMemo(() => {
     if (!ledger?.entries) return [];
@@ -500,9 +550,9 @@ export const CustomerDashboard: React.FC = () => {
             {activeTab === "catalog" && (
               <div className="space-y-4">
 
-                {/* Search + Category */}
+                {/* Search Bar */}
                 <div
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-2xl"
+                  className="flex items-center gap-3 p-3 sm:p-4 rounded-2xl"
                   style={{ background: "white", border: "1px solid rgba(249,115,22,0.15)", boxShadow: "0 2px 8px rgba(249,115,22,0.05)" }}
                 >
                   <div className="relative flex-1">
@@ -511,43 +561,101 @@ export const CustomerDashboard: React.FC = () => {
                       type="text"
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="saffron-input w-full text-sm"
+                      className="saffron-input w-full text-sm font-semibold"
                       style={{ paddingLeft: "2.5rem" }}
-                      placeholder="Search groceries…"
+                      placeholder="Search groceries, snacks, biscuits…"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider shrink-0" style={{ color: SAI.textMuted }}>
-                      Category:
-                    </span>
-                    <select
-                      value={category}
-                      onChange={e => setCategory(e.target.value)}
-                      className="saffron-input flex-1 sm:w-48 text-sm font-semibold cursor-pointer"
-                      style={{ color: SAI.text }}
-                    >
-                      <option value="">All Categories</option>
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 
-                {/* Product Grid */}
-                {filteredProducts.length === 0 ? (
+                {/* Categories Showcase Section (Blinkit-style 4-image collage grid) */}
+                {!search && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-sm sm:text-base uppercase tracking-wider" style={{ color: SAI.maroon }}>
+                        Explore Categories
+                      </h3>
+                      {category && (
+                        <button
+                          onClick={() => setCategory("")}
+                          className="text-xs font-bold text-orange-600 hover:underline"
+                        >
+                          Clear Selection (Show All)
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-3.5">
+                      {categoryWithThumbnails.map(({ categoryName, images, itemCount }, idx) => {
+                        const colors = [
+                          { bg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)", border: "#fdba74", tagBg: "#f97316", text: "#9a3412" },
+                          { bg: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)", border: "#86efac", tagBg: "#16a34a", text: "#166534" },
+                          { bg: "linear-gradient(135deg, #fef2f2 0%, #ffe4e6 100%)", border: "#fca5a5", tagBg: "#e11d48", text: "#9f1239" },
+                          { bg: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border: "#7dd3fc", tagBg: "#0284c7", text: "#075985" },
+                          { bg: "linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)", border: "#d8b4fe", tagBg: "#9333ea", text: "#6b21a8" },
+                          { bg: "linear-gradient(135deg, #fffbebe 0%, #fef3c7 100%)", border: "#fcd34d", tagBg: "#d97706", text: "#92400e" },
+                        ];
+                        const cTheme = colors[idx % colors.length];
+                        const isSelected = category === categoryName;
+
+                        return (
+                          <div
+                            key={categoryName}
+                            onClick={() => setCategory(isSelected ? "" : categoryName)}
+                            className="rounded-2xl p-2 sm:p-2.5 cursor-pointer transition-all duration-300 hover:scale-105 flex flex-col justify-between shadow-xs relative overflow-hidden group"
+                            style={isSelected
+                              ? { background: SAI.goldLight, border: `2.5px solid ${SAI.saffron}`, boxShadow: "0 6px 18px rgba(249,115,22,0.3)" }
+                              : { background: cTheme.bg, border: `1.5px solid ${cTheme.border}` }
+                            }
+                          >
+                            {/* 4 Image Collage Grid */}
+                            <div className="grid grid-cols-2 gap-1 aspect-square rounded-xl overflow-hidden p-1 shadow-inner" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}>
+                              {images.length > 0 ? (
+                                images.map((img, i) => (
+                                  <img key={i} src={img} alt="" className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" />
+                                ))
+                              ) : (
+                                <div className="col-span-2 row-span-2 flex items-center justify-center">
+                                  <ShoppingBag className="w-6 h-6 opacity-40" style={{ color: cTheme.text }} />
+                                </div>
+                              )}
+                              {images.length > 0 && images.length < 4 && Array.from({ length: 4 - images.length }).map((_, i) => (
+                                <div key={i} className="w-full h-full rounded-lg" style={{ background: "rgba(0,0,0,0.03)" }} />
+                              ))}
+                            </div>
+
+                            {/* Category Label & Item Tag */}
+                            <div className="text-center mt-2 flex flex-col items-center">
+                              <p className="font-extrabold text-xs sm:text-sm line-clamp-1 capitalize drop-shadow-xs" style={{ color: isSelected ? SAI.maroon : cTheme.text }}>
+                                {categoryName}
+                              </p>
+                              <span
+                                className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full mt-1 inline-block text-white shadow-xs"
+                                style={{ background: isSelected ? SAI.saffron : cTheme.tagBg }}
+                              >
+                                {itemCount} Items
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Product Grid (Grouped by Variant Base Name) */}
+                {displayProductGroups.length === 0 ? (
                   <div
                     className="text-center py-20 rounded-2xl"
                     style={{ background: "white", border: "1px solid rgba(249,115,22,0.12)" }}
                   >
                     <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: "rgba(249,115,22,0.3)" }} />
-                    <p className="font-semibold" style={{ color: SAI.textMuted }}>No products found</p>
-                    <p className="text-xs mt-1" style={{ color: "rgba(161,98,7,0.6)" }}>Try changing search or category.</p>
+                    <p className="font-semibold text-sm" style={{ color: SAI.textMuted }}>No products found</p>
+                    <p className="text-xs mt-1" style={{ color: "rgba(161,98,7,0.6)" }}>Try changing search or category filter.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-                    {filteredProducts.map(p => (
-                      <div key={p.id} className="product-card flex flex-col hover-lift animate-fade-in">
+                    {displayProductGroups.map(({ baseName, variants, currentProduct: p }) => (
+                      <div key={baseName} className="product-card flex flex-col hover-lift animate-fade-in border rounded-2xl overflow-hidden shadow-xs">
 
                         {/* Product Image */}
                         <div className="relative aspect-square w-full overflow-hidden" style={{ background: SAI.cream }}>
@@ -574,23 +682,45 @@ export const CustomerDashboard: React.FC = () => {
                         {/* Detail */}
                         <div className="p-3 flex-1 flex flex-col justify-between" style={{ background: "white" }}>
                           <div>
-                            <div className="flex flex-wrap gap-1 mb-0.5">
+                            <div className="flex flex-wrap gap-1 mb-1">
                               {p.category.split(",").map((c: string, idx: number) => (
-                                <span key={idx} className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded-md" style={{ background: "#fffbf5", color: SAI.saffron, border: "1px solid rgba(249,115,22,0.2)" }}>
+                                <span key={idx} className="text-[9.5px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md" style={{ background: "#fffbf5", color: SAI.saffron, border: "1px solid rgba(249,115,22,0.2)" }}>
                                   {c.trim()}
                                 </span>
                               ))}
                             </div>
-                            <h3 className="font-bold text-xs sm:text-sm mt-0.5 leading-snug line-clamp-2" style={{ color: SAI.maroon }}>
-                              {p.name}
+                            <h3 className="font-extrabold text-xs sm:text-sm mt-0.5 leading-snug line-clamp-2" style={{ color: SAI.maroon }}>
+                              {baseName}
                             </h3>
                           </div>
 
-                          <div className="mt-2">
+                          <div className="mt-2.5">
+                            {/* Price Selector Chips (Variants, e.g., ₹5, ₹10, ₹20) */}
+                            {variants.length > 1 && (
+                              <div className="mb-2">
+                                <span className="text-[10px] font-bold uppercase block mb-1" style={{ color: SAI.textMuted }}>Select Price Pack:</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {variants.map(v => (
+                                    <button
+                                      key={v.id}
+                                      onClick={() => setSelectedVariants(prev => ({ ...prev, [baseName]: v.id }))}
+                                      className="px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer"
+                                      style={p.id === v.id
+                                        ? { background: SAI.maroon, color: "#fde68a", border: `1.5px solid ${SAI.saffron}` }
+                                        : { background: "#fffbf5", color: SAI.text, border: "1px solid rgba(249,115,22,0.25)" }
+                                      }
+                                    >
+                                      ₹{v.price.toFixed(0)}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-base font-extrabold" style={{ color: SAI.text }}>₹{p.price.toFixed(2)}</p>
+                              <p className="text-base sm:text-lg font-extrabold" style={{ color: SAI.text }}>₹{p.price.toFixed(2)}</p>
                               <span
-                                className="text-[10px] font-bold"
+                                className="text-[11px] font-extrabold"
                                 style={{ color: p.stockQty < 10 ? "#b91c1c" : "#15803d" }}
                               >
                                 {p.stockQty} left
@@ -598,20 +728,20 @@ export const CustomerDashboard: React.FC = () => {
                             </div>
 
                             {p.stockQty > 0 && (
-                              <React.Fragment>
+                              <div className="space-y-2">
                                 {/* Qty picker */}
-                                <div className="flex items-center gap-1.5 mb-2">
-                                  <span className="text-[9px] font-bold uppercase" style={{ color: SAI.textMuted }}>Qty:</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold uppercase" style={{ color: SAI.textMuted }}>QTY:</span>
                                   <div
                                     className="flex items-center rounded-lg overflow-hidden"
                                     style={{ border: "1.5px solid rgba(249,115,22,0.25)" }}
                                   >
                                     <button
                                       onClick={() => setProductQty(p.id, getProductQty(p.id) - 1, p.stockQty)}
-                                      className="px-2 py-1 cursor-pointer transition-colors"
+                                      className="px-2.5 py-1 cursor-pointer transition-colors"
                                       style={{ color: SAI.maroon, background: SAI.cream }}
                                     >
-                                      <Minus className="w-3 h-3" />
+                                      <Minus className="w-3.5 h-3.5" />
                                     </button>
                                     <input
                                       type="number"
@@ -619,27 +749,27 @@ export const CustomerDashboard: React.FC = () => {
                                       max={p.stockQty}
                                       value={getProductQty(p.id)}
                                       onChange={e => setProductQty(p.id, parseInt(e.target.value) || 1, p.stockQty)}
-                                      className="w-8 text-center text-sm font-bold focus:outline-none border-none"
+                                      className="w-9 text-center text-sm font-extrabold focus:outline-none border-none"
                                       style={{ background: "white", color: SAI.text }}
                                     />
                                     <button
                                       onClick={() => setProductQty(p.id, getProductQty(p.id) + 1, p.stockQty)}
-                                      className="px-2 py-1 cursor-pointer transition-colors"
+                                      className="px-2.5 py-1 cursor-pointer transition-colors"
                                       style={{ color: SAI.maroon, background: SAI.cream }}
                                     >
-                                      <Plus className="w-3 h-3" />
+                                      <Plus className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 </div>
                                 {/* Add to cart */}
                                 <button
                                   onClick={() => { addToCart(p, getProductQty(p.id)); setProductQty(p.id, 1, p.stockQty); }}
-                                  className="btn-primary w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                                  className="btn-primary w-full py-2.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                                 >
-                                  <ShoppingCart className="w-3.5 h-3.5" />
+                                  <ShoppingCart className="w-4 h-4" />
                                   Add to Cart
                                 </button>
-                              </React.Fragment>
+                              </div>
                             )}
                           </div>
                         </div>
