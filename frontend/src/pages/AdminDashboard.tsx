@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useToast } from "../context/ToastContext";
 import { productApi, orderApi, ledgerApi, adminApi, authApi } from "../api";
+import { compressImageToWebP } from "../utils/imageCompressor";
 import { 
   Search, Plus, Edit2, Trash2, 
   Package, Users, ClipboardList, 
@@ -1279,18 +1280,21 @@ export const AdminDashboard: React.FC = () => {
                     accept="image/*"
                     id="product-image-file"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        if (file.size > 2 * 1024 * 1024) {
-                          showToast("Image file size should not exceed 2MB.", "warning");
+                        if (file.size > 5 * 1024 * 1024) {
+                          showToast("Image file size should not exceed 5MB.", "warning");
                           return;
                         }
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setProductImage(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          // Compress product image to WebP format (~30KB)
+                          const webpUrl = await compressImageToWebP(file, 600, 600, 0.75);
+                          setProductImage(webpUrl);
+                          showToast("Product image optimized to WebP format!", "success");
+                        } catch (err) {
+                          showToast("Failed to process product image.", "error");
+                        }
                       }
                     }}
                   />

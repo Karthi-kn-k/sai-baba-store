@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useShop } from "../context/ShopContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
+import { compressImageToWebP } from "../utils/imageCompressor";
 import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard } from "lucide-react";
 
 interface NavbarProps {
@@ -80,18 +81,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
 
   if (!user) return null;
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Image size should be less than 2MB");
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("Image size should be less than 5MB", "warning");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateUser({ avatarUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress avatar to 300x300 WebP format (~15KB)
+        const webpUrl = await compressImageToWebP(file, 300, 300, 0.75);
+        updateUser({ avatarUrl: webpUrl });
+        showToast("Profile picture updated & optimized!", "success");
+      } catch (err) {
+        showToast("Failed to process profile image.", "error");
+      }
     }
   };
 
