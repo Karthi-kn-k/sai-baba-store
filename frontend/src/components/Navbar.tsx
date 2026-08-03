@@ -89,8 +89,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
         return;
       }
       try {
-        // Compress avatar to 300x300 WebP format (~15KB)
-        const webpUrl = await compressImageToWebP(file, 300, 300, 0.75);
+        // Compress avatar to 250x250 WebP format (~10KB)
+        const webpUrl = await compressImageToWebP(file, 250, 250, 0.55);
         updateUser({ avatarUrl: webpUrl });
         showToast("Profile picture updated & optimized!", "success");
       } catch (err) {

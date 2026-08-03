@@ -1288,10 +1288,10 @@ export const AdminDashboard: React.FC = () => {
                           return;
                         }
                         try {
-                          // Compress product image to WebP format (~30KB)
-                          const webpUrl = await compressImageToWebP(file, 600, 600, 0.75);
+                          // Compress product image to WebP format (~12KB)
+                          const webpUrl = await compressImageToWebP(file, 400, 400, 0.55);
                           setProductImage(webpUrl);
-                          showToast("Product image optimized to WebP format!", "success");
+                          showToast("Product image compressed & optimized!", "success");
                         } catch (err) {
                           showToast("Failed to process product image.", "error");
                         }

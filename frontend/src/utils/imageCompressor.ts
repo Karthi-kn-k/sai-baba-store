@@ -5,9 +5,9 @@
  */
 export async function compressImageToWebP(
   file: File,
-  maxWidth = 600,
-  maxHeight = 600,
-  quality = 0.75
+  maxWidth = 400,
+  maxHeight = 400,
+  quality = 0.55
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
