@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { signup, login, logout, getMe, refreshToken, sendOtp, verifyOtpLogin, resetPasswordOtp, updateProfile } from "../controllers/authController";
-import { requireAuth } from "../middleware/auth";
+import { signup, login, logout, getMe, refreshToken, sendOtp, verifyOtpLogin, resetPasswordOtp, updateProfile, deleteCustomer } from "../controllers/authController";
+import { requireAuth, requireRole } from "../middleware/auth";
 import rateLimit from "express-rate-limit";
 
 const authLimiter = rateLimit({
@@ -20,5 +20,7 @@ router.post("/verify-otp-login", authLimiter, verifyOtpLogin);
 router.post("/reset-password-otp", authLimiter, resetPasswordOtp);
 router.get("/me", requireAuth, getMe);
 router.patch("/profile", requireAuth, updateProfile);
+router.delete("/customer/:id", requireAuth, requireRole("ADMIN"), deleteCustomer);
 
 export default router;
+

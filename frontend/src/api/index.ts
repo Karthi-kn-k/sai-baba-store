@@ -99,8 +99,11 @@ export const authApi = {
   resetPasswordOtp: async (body: { identifier: string; otp: string; newPassword: string }) => 
     request("/auth/reset-password-otp", { method: "POST", body: JSON.stringify(body) }),
   updateProfile: async (body: { avatarUrl?: string | null }) =>
-    request("/auth/profile", { method: "PATCH", body: JSON.stringify(body) })
+    request("/auth/profile", { method: "PATCH", body: JSON.stringify(body) }),
+  deleteCustomer: async (id: string) =>
+    request(`/auth/customer/${id}`, { method: "DELETE" })
 };
+
 
 // 2. Product API
 export const productApi = {

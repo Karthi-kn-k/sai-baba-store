@@ -294,10 +294,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setProfileOpen(false)} />
           <div
-            className="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up z-10 space-y-5"
+            className="relative w-full max-w-sm max-h-[85vh] rounded-3xl p-5 shadow-2xl animate-scale-up z-10 flex flex-col"
             style={{ background: "#fffbf5", border: "2px solid rgba(249,115,22,0.25)" }}
           >
-            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "rgba(249,115,22,0.15)" }}>
+            <div className="flex items-center justify-between border-b pb-3 shrink-0 mb-3" style={{ borderColor: "rgba(249,115,22,0.15)" }}>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#7f1d1d", color: "#fde68a" }}>
                   <User className="w-4 h-4" />
@@ -316,8 +316,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
               </button>
             </div>
 
-            {/* Profile Avatar Section with Upload / Change / Remove */}
-            <div className="flex flex-col items-center justify-center space-y-2">
+            {/* Scrollable Profile Body */}
+            <div className="overflow-y-auto flex-1 space-y-4 pr-1">
+              {/* Profile Avatar Section with Upload / Change / Remove */}
+              <div className="flex flex-col items-center justify-center space-y-2">
+
               <div className="relative group">
                 <div
                   className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold border-4 shadow-md"
@@ -560,12 +563,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
 
             <button
               onClick={() => setProfileOpen(false)}
-              className="btn-primary w-full py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-md"
+              className="btn-primary w-full py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-md mt-4 shrink-0"
             >
               Close Profile
             </button>
+            </div>
           </div>
         </div>
+
       )}
     </>
   );

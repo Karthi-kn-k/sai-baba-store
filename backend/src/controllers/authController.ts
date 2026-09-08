@@ -381,3 +381,48 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: "Failed to update profile." });
   }
 };
+
+// Admin Only: Permanently delete customer account and clear database storage
+export const deleteCustomer = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const adminUser = req.user;
+
+    if (!adminUser || adminUser.role !== "ADMIN") {
+      res.status(403).json({ message: "Forbidden: Admin privileges required." });
+      return;
+    }
+
+    if (id === adminUser.id) {
+      res.status(400).json({ message: "Admin cannot delete their own account." });
+      return;
+    }
+
+    const customer = await prisma.user.findUnique({ where: { id } });
+    if (!customer) {
+      res.status(404).json({ message: "Customer account not found." });
+      return;
+    }
+
+    if (customer.role === "ADMIN") {
+      res.status(400).json({ message: "Cannot delete an Admin account from customer list." });
+      return;
+    }
+
+    // Delete associated orders, ledger entries, and user record in a transaction
+    await prisma.$transaction([
+      prisma.ledgerEntry.deleteMany({ where: { customerId: id } }),
+      prisma.orderItem.deleteMany({ where: { order: { customerId: id } } }),
+      prisma.order.deleteMany({ where: { customerId: id } }),
+      prisma.user.delete({ where: { id } })
+    ]);
+
+    addNotification(`[Admin Action] Customer account '${customer.name}' (${customer.email}) permanently deleted from database.`);
+
+    res.status(200).json({ message: `Customer '${customer.name}' and all associated data permanently deleted.` });
+  } catch (error: any) {
+    console.error("Delete Customer Error:", error);
+    res.status(500).json({ message: error.message || "Failed to delete customer from database." });
+  }
+};
+

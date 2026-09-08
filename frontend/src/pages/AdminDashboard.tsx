@@ -362,6 +362,26 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Permanently delete a customer from database (Admin only)
+  const handleDeleteCustomer = async (customer: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const confirmMessage = `Are you sure you want to PERMANENTLY DELETE customer '${customer.name}' (${customer.email}) from the database?\n\nThis will permanently delete their user account, ledger history, and order history from Supabase storage. This action CANNOT be undone!`;
+    if (window.confirm(confirmMessage)) {
+      try {
+        await authApi.deleteCustomer(customer.id);
+        showToast(`Customer '${customer.name}' permanently deleted from database.`, "success");
+        if (selectedCustomer?.id === customer.id) {
+          setSelectedCustomer(null);
+          setCustomerLedger(null);
+        }
+        loadAllData(true);
+      } catch (err: any) {
+        showToast(err.message || "Failed to delete customer.", "error");
+      }
+    }
+  };
+
+
   // Setup Entry Adjustment
   const handleOpenAdjustment = (entry: any) => {
     setAdjustingEntry(entry);
@@ -832,12 +852,13 @@ export const AdminDashboard: React.FC = () => {
                           <th className="py-4 px-6">Customer Name</th>
                           <th className="py-4 px-6">Contact Info</th>
                           <th className="py-4 px-6 text-right">Running Balance (Owed)</th>
+                          <th className="py-4 px-6 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                         {filteredCustomers.filter(c => c.hasAccountNotebook).length === 0 ? (
                           <tr>
-                            <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">No active notebook holders found.</td>
+                            <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">No active notebook holders found.</td>
                           </tr>
                         ) : (
                           filteredCustomers.filter(c => c.hasAccountNotebook).map((c) => (
@@ -865,6 +886,17 @@ export const AdminDashboard: React.FC = () => {
                                   ₹{c.balance.toFixed(2)}
                                 </span>
                               </td>
+                              <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteCustomer(c, e)}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-bold border border-rose-200"
+                                  title="Permanently Delete Customer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </button>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -890,12 +922,13 @@ export const AdminDashboard: React.FC = () => {
                           <th className="py-4 px-6">Customer Name</th>
                           <th className="py-4 px-6">Contact Info</th>
                           <th className="py-4 px-6 text-right">Notebook Status</th>
+                          <th className="py-4 px-6 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                         {filteredCustomers.length === 0 ? (
                           <tr>
-                            <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">No registered store customers found.</td>
+                            <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">No registered store customers found.</td>
                           </tr>
                         ) : (
                           filteredCustomers.map((c) => (
@@ -922,10 +955,22 @@ export const AdminDashboard: React.FC = () => {
                                   </span>
                                 )}
                               </td>
+                              <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteCustomer(c, e)}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-bold border border-rose-200"
+                                  title="Permanently Delete Customer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </button>
+                              </td>
                             </tr>
                           ))
                         )}
                       </tbody>
+
                     </table>
                   </div>
                 </div>
@@ -1450,10 +1495,20 @@ export const AdminDashboard: React.FC = () => {
 
       {/* 5. CUSTOMER LEDGER NOTEBOOK OVERLAY MODAL */}
       {selectedCustomer && customerLedger && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white max-w-4xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-up flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white max-w-4xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-up flex flex-col max-h-[92vh] sm:max-h-[85vh] my-auto relative">
+            
+            {/* Prominent Sticky Close (X) Button - Always accessible on Mobile & PC */}
+            <button 
+              onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 bg-white hover:bg-slate-100 text-slate-900 p-2 rounded-full transition-all cursor-pointer shadow-xl flex items-center justify-center border-2 border-slate-300 hover:scale-110"
+              title="Close Notebook"
+            >
+              <X className="w-5 h-5 text-slate-900 stroke-[3]" />
+            </button>
+
             {/* Modal Header */}
-            <div className="relative bg-gradient-to-r from-blue-700 to-indigo-850 text-white p-6 shrink-0 flex items-center justify-between shadow-md">
+            <div className="relative bg-gradient-to-r from-blue-700 to-indigo-850 text-white p-4 sm:p-6 pr-14 sm:pr-16 shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
               {/* Spiral decoration */}
               <div className="absolute top-0 left-0 right-0 flex justify-around -translate-y-1.5 pointer-events-none opacity-80">
                 {Array.from({ length: 24 }).map((_, i) => (
@@ -1461,28 +1516,28 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </div>
 
-              <div className="mt-2 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white/40 shadow-sm flex items-center justify-center bg-orange-500 text-white font-bold">
+              <div className="mt-1 flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0 border-2 border-white/40 shadow-sm flex items-center justify-center bg-orange-500 text-white font-bold">
                   {selectedCustomer.avatarUrl ? (
                     <img src={selectedCustomer.avatarUrl} alt={selectedCustomer.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-6 h-6" />
+                    <User className="w-5 h-5 sm:w-6 sm:h-6" />
                   )}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    Account Notebook: {selectedCustomer.name}
+                  <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                    <span>Account Notebook: {selectedCustomer.name}</span>
                   </h3>
-                  <p className="text-xs text-blue-100 mt-0.5 font-medium flex items-center gap-2">
+                  <p className="text-xs text-blue-100 mt-0.5 font-medium flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <span>Mobile: {selectedCustomer.phone}</span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>Email: {selectedCustomer.email}</span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
                 <button
                   type="button"
                   onClick={async () => {
@@ -1491,7 +1546,7 @@ export const AdminDashboard: React.FC = () => {
                       try {
                         await authApi.resetPasswordOtp({
                           identifier: selectedCustomer.email,
-                          otp: "ADMIN_OVERRIDE", // handled gracefully or standard password reset
+                          otp: "ADMIN_OVERRIDE",
                           newPassword: newPass
                         });
                         showToast(`Password updated successfully for ${selectedCustomer.name}!`, "success");
@@ -1507,15 +1562,18 @@ export const AdminDashboard: React.FC = () => {
                   <span>Reset Password</span>
                 </button>
 
-                <button 
-                  onClick={() => { setSelectedCustomer(null); setCustomerLedger(null); }}
-                  className="bg-white hover:bg-slate-100 text-slate-900 p-2 rounded-full transition-all cursor-pointer shadow-md flex items-center justify-center shrink-0 border border-slate-300"
-                  title="Close Notebook"
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCustomer(selectedCustomer)}
+                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                  title="Permanently delete customer account and ledger history from database"
                 >
-                  <X className="w-5 h-5 text-slate-900 stroke-[3]" />
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Customer</span>
                 </button>
               </div>
             </div>
+
 
             {/* Content Body: Scrollable area with ledger summaries, form, and list */}
             <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6">
