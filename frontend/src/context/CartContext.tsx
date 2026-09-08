@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 export interface CartItem {
   id: string; // matches product.id
@@ -22,14 +23,24 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const storageKey = user?.id ? `cart_user_${user.id}` : "cart_guest";
+
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const localData = localStorage.getItem("cart");
+    const localData = localStorage.getItem(storageKey);
     return localData ? JSON.parse(localData) : [];
   });
 
+  // Whenever logged-in user changes (e.g. login, logout, account switch), restore that user's cart
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    const localData = localStorage.getItem(storageKey);
+    setCart(localData ? JSON.parse(localData) : []);
+  }, [user?.id, storageKey]);
+
+  // Persist cart changes under user-specific storage key
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(cart));
+  }, [cart, storageKey]);
 
   const addToCart = (product: any, qty: number = 1) => {
     const safeQty = Math.max(1, Math.min(qty, product.stockQty));
@@ -73,6 +84,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = () => {
     setCart([]);
+    localStorage.removeItem(storageKey);
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -102,3 +114,4 @@ export const useCart = () => {
   }
   return context;
 };
+
