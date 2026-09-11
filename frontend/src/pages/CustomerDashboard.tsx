@@ -4,11 +4,12 @@ import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
 import { useShop } from "../context/ShopContext";
 import { productApi, orderApi, ledgerApi } from "../api";
+import { playPackedOrderSound, playSound, type SoundTone } from "../utils/sound";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Search, ShoppingCart, Trash2, Plus, Minus, CreditCard,
   ShoppingBag, X, IndianRupee, AlertCircle,
-  BookOpen, Package, History as LedgerIcon, Clock, Phone
+  BookOpen, Package, History as LedgerIcon, Clock, Phone, Volume2
 } from "lucide-react";
 
 /* ── Device detection hook ── */
@@ -102,14 +103,41 @@ export const CustomerDashboard: React.FC = () => {
     };
   });
 
+  const [customerSoundTone, setCustomerSoundTone] = useState<SoundTone>(
+    () => (localStorage.getItem("customer_sound_tone") as SoundTone) || "CHIME"
+  );
+  const [showCustomerSoundSettings, setShowCustomerSoundSettings] = useState(false);
+
+  const handleUpdateCustomerSoundTone = (tone: SoundTone) => {
+    setCustomerSoundTone(tone);
+    localStorage.setItem("customer_sound_tone", tone);
+    playSound(tone, 0.4);
+  };
+
+  // Ref for tracking packed orders to trigger sound alerts
+  const prevPackedOrdersRef = React.useRef<Set<string>>(new Set());
+
   /* ── Data loading ── */
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const prodData = await productApi.list({ activeOnly: true });
       setProducts(prodData.products);
       const ordData = await orderApi.list();
-      setOrders(ordData.orders);
+      if (ordData?.orders) {
+        const currentlyPacked = new Set<string>(
+          ordData.orders.filter((o: any) => o.status === "PACKED").map((o: any) => o.id)
+        );
+        for (const id of currentlyPacked) {
+          if (!prevPackedOrdersRef.current.has(id) && prevPackedOrdersRef.current.size > 0) {
+            playPackedOrderSound(customerSoundTone);
+            showToast("🎉 Great news! Your order is PACKED & ready for pickup!", "success");
+            break;
+          }
+        }
+        prevPackedOrdersRef.current = currentlyPacked;
+        setOrders(ordData.orders);
+      }
       const ledData = await ledgerApi.getLedger();
       setLedger(ledData);
       const config = await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`).then(r => r.json()).catch(() => ({}));
@@ -121,13 +149,17 @@ export const CustomerDashboard: React.FC = () => {
         adminPhone: localPhone || config.adminPhone || "9123456789"
       });
     } catch (err: any) {
-      showToast(err.message || "Failed to load data.", "error");
+      if (!isSilent) showToast(err.message || "Failed to load data.", "error");
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(() => loadData(true), 6000);
+    return () => clearInterval(interval);
+  }, [customerSoundTone]);
   useEffect(() => {
     const fn = () => setCartOpen(prev => !prev);
     window.addEventListener("toggle-cart-drawer", fn);
@@ -396,10 +428,22 @@ export const CustomerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* ╔══════════════════════════════════════╗
-          ║   DEVOTIONAL BALANCE / ACCOUNT CARD  ║
-          ╚══════════════════════════════════════╝ */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2">
+        {/* Sound Settings Header Button */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
+            Welcome, {user?.name || "Valued Customer"}
+          </span>
+          <button
+            onClick={() => setShowCustomerSoundSettings(true)}
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-xs transition-all hover:scale-105 active:scale-95"
+            style={{ background: "#fffbf5", border: "1.5px solid rgba(249,115,22,0.3)", color: "#c2410c" }}
+            title="Configure Order Packed Ringtone"
+          >
+            <Volume2 className="w-4 h-4 text-orange-600" />
+            <span>Ringtone Sound</span> 🔔
+          </button>
+        </div>
 
         {/* Balance + cart row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-4">
@@ -1436,6 +1480,72 @@ export const CustomerDashboard: React.FC = () => {
                 <span className="text-lg font-extrabold" style={{ color: SAI.maroon }}>₹{monthlySpendingTotal.toFixed(2)}</span>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Customer Sound Settings Modal ── */}
+      {showCustomerSoundSettings && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn text-slate-900">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-100 relative">
+            <button
+              onClick={() => setShowCustomerSoundSettings(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 pb-4 mb-4 border-b border-amber-100">
+              <div className="p-2.5 rounded-2xl bg-orange-100 text-orange-600">
+                <Volume2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">Order Sound Settings</h3>
+                <p className="text-xs text-slate-500 font-medium">Select your sound alert chime when order is packed</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+                  Select Ringtone Tone:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["CHIME", "BELL", "DIGITAL", "SIREN"] as SoundTone[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleUpdateCustomerSoundTone(t)}
+                      className={`p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-between cursor-pointer transition-all ${
+                        customerSoundTone === t
+                          ? "border-orange-500 bg-orange-50 text-orange-950 shadow-xs"
+                          : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{t === "CHIME" ? "🎵 Classic Chime" : t === "BELL" ? "🔔 Shop Bell" : t === "DIGITAL" ? "⚡ Digital Pulse" : "🚨 Siren Alarm"}</span>
+                      {customerSoundTone === t && <X className="w-4 h-4 text-orange-600 rotate-45" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => playSound(customerSoundTone, 0.4)}
+                  className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs bg-orange-500 hover:bg-orange-600 text-white shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Volume2 className="w-4 h-4" /> Test Sound Tone
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerSoundSettings(false)}
+                  className="py-3 px-4 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

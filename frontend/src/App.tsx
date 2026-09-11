@@ -5,10 +5,16 @@ import { Navbar } from "./components/Navbar";
 import { Login } from "./pages/Login";
 import { CustomerDashboard } from "./pages/CustomerDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { initAudioUnlocker } from "./utils/sound";
 
 const AppContent: React.FC = () => {
   const { user, isInitializing } = useAuth();
   const { setThemeForRole } = useTheme();
+
+  // Initialize global mobile audio unlocker
+  useEffect(() => {
+    initAudioUnlocker();
+  }, []);
 
   // Scoped theme loading hook
   useEffect(() => {

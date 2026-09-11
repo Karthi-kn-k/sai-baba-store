@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useToast } from "../context/ToastContext";
 import { productApi, orderApi, ledgerApi, adminApi, authApi } from "../api";
 import { compressImageToWebP } from "../utils/imageCompressor";
+import { playSound, startAdminAlarm, stopAdminAlarm, type SoundTone } from "../utils/sound";
 import { 
   Search, Plus, Edit2, Trash2, 
   Package, Users, ClipboardList, 
-  Check, X, ShieldAlert, PlusCircle, PenTool, BookOpen, User
+  Check, X, ShieldAlert, PlusCircle, PenTool, BookOpen, User, Volume2, VolumeX, Bell, Settings
 } from "lucide-react";
 
 export const AdminDashboard: React.FC = () => {
@@ -64,6 +65,26 @@ export const AdminDashboard: React.FC = () => {
   // Category Filter State
   const [categoryFilter, setCategoryFilter] = useState("");
 
+  // Sound Alarm State
+  const [adminSoundTone, setAdminSoundTone] = useState<SoundTone>(
+    () => (localStorage.getItem("admin_sound_tone") as SoundTone) || "SIREN"
+  );
+  const [isAlarmRinging, setIsAlarmRinging] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
+
+  const handleMuteAlarm = () => {
+    stopAdminAlarm();
+    setIsAlarmRinging(false);
+    showToast("🔇 Alarm silenced by Admin.", "info");
+  };
+
+  const handleUpdateAdminSoundTone = (tone: SoundTone) => {
+    setAdminSoundTone(tone);
+    localStorage.setItem("admin_sound_tone", tone);
+    playSound(tone, 0.4);
+  };
+
   const loadNotifications = async () => {
     try {
       const data = await adminApi.getNotifications();
@@ -83,16 +104,19 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Poll notifications every 10 seconds silently
+  // Poll notifications and orders every 6 seconds silently
   useEffect(() => {
     loadNotifications();
     loadAllData(false);
     const interval = setInterval(() => {
       loadNotifications();
       loadAllData(true);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    }, 6000);
+    return () => {
+      clearInterval(interval);
+      stopAdminAlarm();
+    };
+  }, [soundEnabled, adminSoundTone]);
 
   // Ref for tracking new incoming order count
   const prevOrderCountRef = React.useRef<number | null>(null);
@@ -110,13 +134,25 @@ export const AdminDashboard: React.FC = () => {
 
       if (prodData?.products) setProducts(prodData.products);
       if (ordData?.orders) {
-        if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
-          setHasNewOrderAlert(true);
-          setTimeout(() => setHasNewOrderAlert(false), 10000); // Blink card for 10s
-          showToast("⚡ NEW ORDER ARRIVED!", "success");
-        }
-        prevOrderCountRef.current = ordData.orders.length;
         setOrders(ordData.orders);
+        const unhandledPlaced = ordData.orders.filter((o: any) => o.status === "PLACED");
+
+        if (unhandledPlaced.length > 0 && soundEnabled) {
+          // Trigger the 10-second alarm ring ONLY when a NEW order arrives
+          if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
+            setHasNewOrderAlert(true);
+            setTimeout(() => setHasNewOrderAlert(false), 10000);
+            showToast("⚡ NEW ORDER ARRIVED! Ringing for 10s...", "success");
+            startAdminAlarm(adminSoundTone, 10000);
+            setIsAlarmRinging(true);
+            setTimeout(() => setIsAlarmRinging(false), 10000);
+          }
+        } else {
+          stopAdminAlarm();
+          setIsAlarmRinging(false);
+        }
+
+        prevOrderCountRef.current = ordData.orders.length;
       }
       if (custData?.summary) setCustomersSummary(custData.summary);
       if (verifyData) setPendingVerifications(verifyData);
@@ -249,6 +285,8 @@ export const AdminDashboard: React.FC = () => {
     if (!window.confirm(`Are you sure you want to update order status to ${status}?`)) return;
     try {
       await orderApi.updateStatus(orderId, status);
+      stopAdminAlarm();
+      setIsAlarmRinging(false);
       showToast(`Order status updated to ${status}.`, "success");
       await loadAllData(true); // Silent reload so page doesn't unmount or show spinner
       if (selectedCustomer) {
@@ -424,6 +462,54 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8" style={{ color: "#1c0a00", minHeight: "100dvh" }}>
+      {/* ── Ringing Alarm Banner ── */}
+      {isAlarmRinging && (
+        <div className="mb-5 rounded-2xl p-4 sm:p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-3 animate-pulse shadow-2xl"
+             style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c, #991b1b)", border: "2px solid #f87171" }}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 bg-white/20 rounded-full animate-bounce">
+              <Bell className="w-6 h-6 text-yellow-300" />
+            </span>
+            <div>
+              <h3 className="font-black text-sm sm:text-base text-yellow-200 tracking-wide uppercase">🚨 NEW UNHANDLED ORDER ARRIVED!</h3>
+              <p className="text-xs text-red-100 font-medium">Alarm is ringing continuously until confirmed or muted.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
+              className="flex-1 sm:flex-none text-xs font-black px-4 py-2 rounded-xl cursor-pointer bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md transition-all"
+            >
+              📦 View &amp; Pack Order
+            </button>
+            <button
+              onClick={handleMuteAlarm}
+              className="flex-1 sm:flex-none text-xs font-bold px-4 py-2 rounded-xl cursor-pointer bg-white/20 hover:bg-white/30 text-white border border-white/30 transition-all flex items-center justify-center gap-1.5"
+            >
+              <VolumeX className="w-4 h-4" /> Mute Alarm
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Dashboard Header & Sound Controls ── */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 className="text-base sm:text-lg font-black tracking-tight" style={{ color: "#7f1d1d" }}>
+          Store Dashboard Overview
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSoundSettings(true)}
+            className="flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-xl cursor-pointer shadow-sm transition-all hover:scale-105 active:scale-95"
+            style={{ background: "#fffbf5", border: "1.5px solid rgba(249,115,22,0.3)", color: "#c2410c" }}
+            title="Configure Admin & Customer Ringtone Tones"
+          >
+            <Settings className="w-4 h-4 text-orange-600" />
+            <span>Sound Settings</span> 🔔
+          </button>
+        </div>
+      </div>
+
       {/* ── Overview Cards ── */}
       <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-5 sm:mb-8">
         <div
@@ -1737,6 +1823,97 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sound Settings Modal ── */}
+      {showSoundSettings && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-100 relative">
+            <button
+              onClick={() => setShowSoundSettings(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 pb-4 mb-4 border-b border-amber-100">
+              <div className="p-2.5 rounded-2xl bg-orange-100 text-orange-600">
+                <Volume2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">Sound &amp; Alarm Settings</h3>
+                <p className="text-xs text-slate-500 font-medium">Configure store order ringtone preferences</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-slate-50">
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-800">Sound Alarm Alerts</h4>
+                  <p className="text-[11px] text-slate-500 font-medium">Ring audio when new orders arrive</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`px-3 py-1.5 rounded-xl font-black text-xs cursor-pointer transition-all ${
+                    soundEnabled ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"
+                  }`}
+                >
+                  {soundEnabled ? "ENABLED 🔔" : "MUTED 🔇"}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+                  Select Ringtone Tone:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["SIREN", "CHIME", "BELL", "DIGITAL"] as SoundTone[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleUpdateAdminSoundTone(t)}
+                      className={`p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-between cursor-pointer transition-all ${
+                        adminSoundTone === t
+                          ? "border-orange-500 bg-orange-50 text-orange-950 shadow-xs"
+                          : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{t === "SIREN" ? "🚨 Siren Alarm" : t === "BELL" ? "🔔 Shop Bell" : t === "DIGITAL" ? "⚡ Digital Pulse" : "🎵 Classic Chime"}</span>
+                      {adminSoundTone === t && <Check className="w-4 h-4 text-orange-600" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/60 text-xs space-y-2">
+                <p className="font-bold text-amber-950 flex items-center gap-1.5">
+                  <Bell className="w-4 h-4 text-amber-700" /> Mobile &amp; Laptop Audio Notice:
+                </p>
+                <p className="text-amber-800 font-medium text-[11px] leading-relaxed">
+                  On mobile phones (iOS &amp; Android), audio requires a single tap anywhere on screen to activate. Test your tone below to ensure sound is enabled on your device!
+                </p>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => playSound(adminSoundTone, 0.4)}
+                  className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs bg-orange-500 hover:bg-orange-600 text-white shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Volume2 className="w-4 h-4" /> Test Ringtone Sound
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSoundSettings(false)}
+                  className="py-3 px-4 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>
