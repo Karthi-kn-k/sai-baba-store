@@ -7,6 +7,26 @@ export async function requestNotificationPermission(): Promise<boolean> {
   if (typeof window === "undefined" || !("Notification" in window)) {
     return false;
   }
+
+  // Register dummy inline ServiceWorker if available to enable OS-level notifications
+  if ("serviceWorker" in navigator) {
+    try {
+      const swCode = `
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('notificationclick', e => {
+          e.notification.close();
+          e.waitUntil(clients.matchAll({type:'window'}).then(c => c.length > 0 ? c[0].focus() : clients.openWindow('/')));
+        });
+      `;
+      const blob = new Blob([swCode], { type: "application/javascript" });
+      const swUrl = URL.createObjectURL(blob);
+      await navigator.serviceWorker.register(swUrl).catch(() => {});
+    } catch (e) {
+      // Ignore fallback SW creation errors
+    }
+  }
+
   if (Notification.permission === "granted") {
     return true;
   }
@@ -34,11 +54,11 @@ export function sendSystemNotification(title: string, body: string, icon?: strin
         icon: icon || "/favicon.svg",
         badge: "/favicon.svg",
         tag: `saibaba-store-${Date.now()}`,
-        requireInteraction: true
+        requireInteraction: true,
+        vibrate: [200, 100, 200]
       };
 
-      // Try ServiceWorker registration first (required on mobile Chrome / PWA)
-      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      if ("serviceWorker" in navigator) {
         navigator.serviceWorker.ready.then(reg => {
           reg.showNotification(title, options);
         }).catch(() => {
