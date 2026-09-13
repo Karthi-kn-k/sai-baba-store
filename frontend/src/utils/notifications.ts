@@ -29,18 +29,28 @@ export function sendSystemNotification(title: string, body: string, icon?: strin
 
   if (Notification.permission === "granted") {
     try {
-      const n = new Notification(title, {
+      const options = {
         body,
         icon: icon || "/favicon.svg",
         badge: "/favicon.svg",
-        tag: "saibaba-store-notification",
-        requireInteraction: false
-      });
-
-      n.onclick = () => {
-        window.focus();
-        n.close();
+        tag: `saibaba-store-${Date.now()}`,
+        requireInteraction: true
       };
+
+      // Try ServiceWorker registration first (required on mobile Chrome / PWA)
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, options);
+        }).catch(() => {
+          new Notification(title, options);
+        });
+      } else {
+        const n = new Notification(title, options);
+        n.onclick = () => {
+          window.focus();
+          n.close();
+        };
+      }
     } catch (err) {
       console.error("Failed to display system notification:", err);
     }

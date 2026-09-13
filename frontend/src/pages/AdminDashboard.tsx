@@ -139,27 +139,28 @@ export const AdminDashboard: React.FC = () => {
         setOrders(ordData.orders);
         const unhandledPlaced = ordData.orders.filter((o: any) => o.status === "PLACED");
 
-        if (unhandledPlaced.length > 0 && soundEnabled) {
-          // Trigger the 10-second alarm ring & push notification ONLY when a NEW order arrives
+        if (ordData.orders.length > 0) {
+          // Trigger alert ONLY when a NEW order arrives
           if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
-            setHasNewOrderAlert(true);
-            setTimeout(() => setHasNewOrderAlert(false), 10000);
-            showToast("⚡ NEW ORDER ARRIVED! Ringing for 10s...", "success");
-            startAdminAlarm(adminSoundTone, 10000);
-            setIsAlarmRinging(true);
-            setTimeout(() => setIsAlarmRinging(false), 10000);
-
             const latestOrder = ordData.orders[0];
             const custName = latestOrder?.customer?.name || "a customer";
             const amount = latestOrder?.totalAmount ? latestOrder.totalAmount.toFixed(2) : "0.00";
+
+            // Always trigger OS System Web Push Notification
             sendSystemNotification(
               "🛍️ New Order Received!",
               `New order received from ${custName} — ₹${amount}`
             );
+
+            if (soundEnabled && unhandledPlaced.length > 0) {
+              setHasNewOrderAlert(true);
+              setTimeout(() => setHasNewOrderAlert(false), 10000);
+              showToast("⚡ NEW ORDER ARRIVED! Ringing for 10s...", "success");
+              startAdminAlarm(adminSoundTone, 10000);
+              setIsAlarmRinging(true);
+              setTimeout(() => setIsAlarmRinging(false), 10000);
+            }
           }
-        } else {
-          stopAdminAlarm();
-          setIsAlarmRinging(false);
         }
 
         prevOrderCountRef.current = ordData.orders.length;

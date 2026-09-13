@@ -124,7 +124,7 @@ export const CustomerDashboard: React.FC = () => {
           ordData.orders.filter((o: any) => o.status === "PACKED").map((o: any) => o.id)
         );
         for (const id of currentlyPacked) {
-          if (!prevPackedOrdersRef.current.has(id) && prevPackedOrdersRef.current.size > 0) {
+          if (!prevPackedOrdersRef.current.has(id)) {
             playPackedOrderSound(customerSoundTone);
             showToast("🎉 Great news! Your order is PACKED & ready for pickup!", "success");
             sendSystemNotification(
