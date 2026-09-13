@@ -8,6 +8,9 @@ import ledgerRouter from "./routes/ledgerRoutes";
 
 const app = express();
 
+// Trust reverse proxy (Render / Heroku / Vercel) for rate limiting
+app.set("trust proxy", 1);
+
 // Middlewares
 app.use(cors({
   origin: "*", // Adjust for specific frontends in production

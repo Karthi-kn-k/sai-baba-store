@@ -20,7 +20,7 @@ export class EmailService {
       secure, // true for 465, false for 587
       auth: {
         user: user.trim(),
-        pass: pass.trim()
+        pass: pass.replace(/\s+/g, "").trim()
       },
       tls: {
         rejectUnauthorized: false
