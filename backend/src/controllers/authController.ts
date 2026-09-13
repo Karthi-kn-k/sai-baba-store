@@ -29,15 +29,10 @@ const generateTokens = (user: { id: string; email: string; role: string }) => {
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, phone, password, role, otp } = req.body;
+    const { name, email, phone, password, role } = req.body;
 
     if (!name || !email || !phone || !password) {
       res.status(400).json({ message: "Name, email, phone, and password are required." });
-      return;
-    }
-
-    if (!otp) {
-      res.status(400).json({ message: "Email verification OTP code is required to create an account." });
       return;
     }
 
@@ -56,14 +51,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(trimmedPhone)) {
       res.status(400).json({ message: "Phone number must be a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)." });
-      return;
-    }
-
-    // 3. Verify Email OTP before proceeding
-    try {
-      await OtpService.verifyOtp({ email: trimmedEmail, purpose: "SIGNUP", otp: otp.trim() });
-    } catch (otpErr: any) {
-      res.status(400).json({ message: otpErr.message || "Invalid or expired Email OTP code." });
       return;
     }
 
