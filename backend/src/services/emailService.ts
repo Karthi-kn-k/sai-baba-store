@@ -11,33 +11,25 @@ export class EmailService {
     }
 
     const host = process.env.SMTP_HOST || "smtp.gmail.com";
-    const port = parseInt(process.env.SMTP_PORT || "465", 10);
+    const port = parseInt(process.env.SMTP_PORT || "587", 10);
     const cleanPass = pass.replace(/\s+/g, "").trim();
     const cleanUser = user.trim();
 
-    // If host is gmail, Nodemailer service: 'gmail' handles ports and SSL/STARTTLS automatically
-    if (host.includes("gmail")) {
-      return nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: cleanUser,
-          pass: cleanPass
-        }
-      });
-    }
-
-    const secure = port === 465;
     return nodemailer.createTransport({
-      host,
-      port,
-      secure,
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // Use STARTTLS for port 587
       auth: {
         user: cleanUser,
         pass: cleanPass
       },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        ciphers: "SSLv3"
+      },
+      connectionTimeout: 10000, // 10s connection timeout
+      greetingTimeout: 5000,
+      socketTimeout: 15000
     });
   }
 
