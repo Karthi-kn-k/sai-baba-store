@@ -12,15 +12,28 @@ export class EmailService {
 
     const host = process.env.SMTP_HOST || "smtp.gmail.com";
     const port = parseInt(process.env.SMTP_PORT || "465", 10);
-    const secure = port === 465;
+    const cleanPass = pass.replace(/\s+/g, "").trim();
+    const cleanUser = user.trim();
 
+    // If host is gmail, Nodemailer service: 'gmail' handles ports and SSL/STARTTLS automatically
+    if (host.includes("gmail")) {
+      return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: cleanUser,
+          pass: cleanPass
+        }
+      });
+    }
+
+    const secure = port === 465;
     return nodemailer.createTransport({
       host,
       port,
-      secure, // true for 465, false for 587
+      secure,
       auth: {
-        user: user.trim(),
-        pass: pass.replace(/\s+/g, "").trim()
+        user: cleanUser,
+        pass: cleanPass
       },
       tls: {
         rejectUnauthorized: false
@@ -60,8 +73,10 @@ export class EmailService {
       await transporter.sendMail(mailOptions);
       console.log(`[EmailService] OTP email successfully sent to ${toEmail}`);
       return true;
-    } catch (error) {
-      console.error(`[EmailService ERROR] Failed to send email to ${toEmail}:`, error);
+    } catch (error: any) {
+      console.error(`[EmailService ERROR] Failed to send email to ${toEmail}:`, error?.message || error);
+      if (error?.code) console.error(`[EmailService ERROR Code]: ${error.code}`);
+      if (error?.response) console.error(`[EmailService ERROR Response]: ${error.response}`);
       return false;
     }
   }
