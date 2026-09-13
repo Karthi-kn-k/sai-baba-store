@@ -158,18 +158,23 @@ export function stopAdminAlarm() {
 export function playPackedOrderSound(tone: SoundTone = "CHIME") {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const now = ctx.currentTime;
+  
+  // Ring celebratory chime sequence for ~3 seconds (3 repeats spaced 900ms apart)
+  for (let i = 0; i < 3; i++) {
+    const delay = i * 0.9;
+    const now = ctx.currentTime + delay;
 
-  if (tone === "BELL") {
-    playTone(ctx, 1000, now, 0.4, 0.4, "sine");
-    playTone(ctx, 1500, now + 0.2, 0.5, 0.4, "sine");
-  } else if (tone === "DIGITAL") {
-    playTone(ctx, 783.99, now, 0.1, 0.3, "square");
-    playTone(ctx, 1046.5, now + 0.1, 0.2, 0.3, "square");
-  } else {
-    // 3-tone celebration chime (C5 -> E5 -> G5)
-    playTone(ctx, 523.25, now, 0.25, 0.35, "sine");
-    playTone(ctx, 659.25, now + 0.1, 0.25, 0.35, "sine");
-    playTone(ctx, 783.99, now + 0.2, 0.45, 0.4, "sine");
+    if (tone === "BELL") {
+      playTone(ctx, 1000, now, 0.4, 0.4, "sine");
+      playTone(ctx, 1500, now + 0.2, 0.5, 0.4, "sine");
+    } else if (tone === "DIGITAL") {
+      playTone(ctx, 783.99, now, 0.1, 0.3, "square");
+      playTone(ctx, 1046.5, now + 0.1, 0.2, 0.3, "square");
+    } else {
+      // 3-tone celebration chime (C5 -> E5 -> G5)
+      playTone(ctx, 523.25, now, 0.25, 0.35, "sine");
+      playTone(ctx, 659.25, now + 0.1, 0.25, 0.35, "sine");
+      playTone(ctx, 783.99, now + 0.2, 0.45, 0.4, "sine");
+    }
   }
 }
