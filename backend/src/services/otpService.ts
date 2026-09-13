@@ -73,15 +73,15 @@ export class OtpService {
       });
     }
 
-    // Send via email
+    // Send via secure SMTP email
     const emailSent = await EmailService.sendOtp(email, rawOtp, purpose);
 
     if (!emailSent) {
-      throw new Error(`Email delivery to ${email} failed. Please ensure your email address is valid or contact Store Admin.`);
+      throw new Error(`Failed to send verification OTP to ${email} via SMTP. Please ensure SMTP credentials are configured and try again.`);
     }
 
     return {
-      message: `OTP sent successfully to ${email}. Check your inbox or spam folder.`
+      message: `Verification OTP sent successfully to ${email}. Please check your email inbox or spam folder.`
     };
   }
 

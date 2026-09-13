@@ -6,15 +6,24 @@ export class EmailService {
     const pass = process.env.SMTP_PASS;
 
     if (!user || !pass) {
-      console.warn("[EmailService WARNING] SMTP credentials are not configured in process.env.");
+      console.warn("[EmailService WARNING] SMTP_USER / SMTP_PASS not set in process.env. System in Demo Mode.");
       return null;
     }
 
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const port = parseInt(process.env.SMTP_PORT || "465", 10);
+    const secure = port === 465;
+
     return nodemailer.createTransport({
-      service: "gmail",
+      host,
+      port,
+      secure, // true for 465, false for 587
       auth: {
         user: user.trim(),
         pass: pass.trim()
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }

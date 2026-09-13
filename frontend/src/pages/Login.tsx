@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
+import { encryptPassword } from "../utils/crypto";
 import { 
   Mail, Lock, User, Phone, LogIn, UserPlus, 
   ArrowLeft, ShieldCheck, Eye, EyeOff 
@@ -37,6 +38,34 @@ export const Login: React.FC = () => {
   const [phoneError, setPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
+  const [identifierError, setIdentifierError] = useState("");
+
+  const handleIdentifierChange = (val: string) => {
+    setIdentifier(val);
+    const trimmed = val.trim();
+    if (!trimmed) {
+      setIdentifierError("");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/;
+
+    if (trimmed.includes("@")) {
+      if (!emailRegex.test(trimmed)) {
+        setIdentifierError("Enter a valid email address (e.g. user@gmail.com).");
+      } else {
+        setIdentifierError("");
+      }
+    } else if (/^\d+$/.test(trimmed)) {
+      if (!phoneRegex.test(trimmed)) {
+        setIdentifierError("Enter a valid 10-digit Indian mobile number (6-9).");
+      } else {
+        setIdentifierError("");
+      }
+    } else {
+      setIdentifierError("Enter a valid email address or 10-digit Indian mobile number.");
+    }
+  };
 
   // Validation Handlers
   const handleNameChange = (val: string) => {
@@ -54,11 +83,39 @@ export const Login: React.FC = () => {
   };
 
   const handlePhoneChange = (val: string) => {
-    setPhone(val);
+    const numericOnly = val.replace(/\D/g, "").slice(0, 10);
+    setPhone(numericOnly);
     const phoneRegex = /^[6-9]\d{9}$/;
-    if (!val.trim()) setPhoneError("Mobile number is required.");
-    else if (!phoneRegex.test(val.trim())) setPhoneError("Enter a valid 10-digit Indian mobile number (6-9).");
+    if (!numericOnly) setPhoneError("Mobile number is required.");
+    else if (!phoneRegex.test(numericOnly)) setPhoneError("Enter a valid 10-digit Indian mobile number (6-9).");
     else setPhoneError("");
+  };
+
+  const [signupOtp, setSignupOtp] = useState("");
+  const [signupOtpSent, setSignupOtpSent] = useState(false);
+  const [sendingSignupOtp, setSendingSignupOtp] = useState(false);
+
+  const handleSendSignupOtp = async () => {
+    if (nameError || emailError || phoneError || passwordError || !name || !email || !phone || !password) {
+      showToast("Please fill in all details correctly before requesting Email OTP.", "warning");
+      return;
+    }
+
+    setSendingSignupOtp(true);
+    try {
+      const res: any = await authApi.sendOtp({ identifier: email.trim(), type: "SIGNUP" });
+      setSignupOtpSent(true);
+      startResendCountdown();
+      if (res?.message) {
+        showToast(res.message, "success");
+      } else {
+        showToast(`Verification OTP sent to ${email.trim()}! Please check your email inbox.`, "success");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to send signup OTP.", "error");
+    } finally {
+      setSendingSignupOtp(false);
+    }
   };
 
   const handlePasswordChange = (val: string) => {
@@ -100,22 +157,24 @@ export const Login: React.FC = () => {
 
   const handleSendOtpCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!identifier.trim()) {
-      showToast("Please enter your registered email address.", "warning");
+    const trimmed = identifier.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmed || !emailRegex.test(trimmed)) {
+      showToast("Please enter a valid registered email address to receive your OTP.", "warning");
       return;
     }
 
     setLoading(true);
     try {
       const type = authMode === "RECOVERY" ? "RECOVERY" : "LOGIN";
-      const res: any = await authApi.sendOtp({ identifier: identifier.trim(), type });
+      const res: any = await authApi.sendOtp({ identifier: trimmed, type });
       setOtpSent(true);
       startResendCountdown();
 
-      if (res?.otp) {
-        showToast(`[Demo Mode] OTP for ${identifier.trim()}: ${res.otp}`, "success");
+      if (res?.message) {
+        showToast(res.message, "success");
       } else {
-        showToast(res?.message || `Verification code sent to ${identifier.trim()}`, "success");
+        showToast(`Verification OTP code sent to ${trimmed}! Please check your email inbox.`, "success");
       }
     } catch (err: any) {
       showToast(err.message || "Failed to send OTP code.", "error");
@@ -135,7 +194,8 @@ export const Login: React.FC = () => {
 
       setLoading(true);
       try {
-        await login({ email: identifier.trim(), password });
+        const encryptedPassword = encryptPassword(password);
+        await login({ email: identifier.trim(), password: encryptedPassword });
         showToast("Signed in successfully!", "success");
       } catch (err: any) {
         showToast(err.message || "Invalid credentials.", "error");
@@ -145,6 +205,10 @@ export const Login: React.FC = () => {
     } 
     
     else if (authMode === "SIGNUP") {
+      if (!signupOtpSent || !signupOtp.trim()) {
+        showToast("Please click 'Send OTP to Email' and enter your verification OTP code to create your account.", "warning");
+        return;
+      }
       if (nameError || emailError || phoneError || passwordError || !name || !email || !phone || !password) {
         showToast("Please resolve all validation errors before proceeding.", "warning");
         return;
@@ -152,15 +216,17 @@ export const Login: React.FC = () => {
 
       setLoading(true);
       try {
+        const encryptedPassword = encryptPassword(password);
         await authApi.signup({
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
-          password,
+          password: encryptedPassword,
+          otp: signupOtp.trim(),
           role: "CUSTOMER"
         });
-        showToast("Account created successfully! Auto logging in...", "success");
-        await login({ email: email.trim(), password });
+        showToast("Account created & email verified successfully! Signing in...", "success");
+        await login({ email: email.trim(), password: encryptedPassword });
       } catch (err: any) {
         showToast(err.message || "Signup failed.", "error");
       } finally {
@@ -201,10 +267,11 @@ export const Login: React.FC = () => {
 
       setLoading(true);
       try {
+        const encryptedNewPassword = encryptPassword(newPassword);
         await authApi.resetPasswordOtp({
           identifier: identifier.trim(),
           otp: otpCode.trim(),
-          newPassword
+          newPassword: encryptedNewPassword
         });
         showToast("Password reset successfully! Please sign in.", "success");
         toggleAuthMode("PASSWORD_LOGIN");
@@ -223,7 +290,7 @@ export const Login: React.FC = () => {
     setShowPassword(false);
     setShowNewPassword(false);
     setNameError(""); setEmailError(""); setPhoneError("");
-    setPasswordError(""); setNewPasswordError("");
+    setPasswordError(""); setNewPasswordError(""); setIdentifierError("");
   };
 
   return (
@@ -375,6 +442,49 @@ export const Login: React.FC = () => {
                   </div>
                   {passwordError && <p className="text-[10px] text-rose-500 font-semibold mt-1">{passwordError}</p>}
                 </div>
+
+                {/* Email Verification OTP Section for Account Creation */}
+                <div className="p-3 rounded-xl bg-orange-50/70 border border-orange-200 space-y-2 mt-2">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-amber-900">Email Verification OTP</label>
+                    {signupOtpSent && (
+                      <button
+                        type="button"
+                        onClick={handleSendSignupOtp}
+                        disabled={resendTimer > 0 || sendingSignupOtp}
+                        className="text-[10px] text-orange-600 font-bold hover:underline bg-transparent border-0 cursor-pointer disabled:text-slate-400 disabled:no-underline"
+                      >
+                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={signupOtp}
+                        onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        placeholder={signupOtpSent ? "Enter 6-digit OTP" : "Click 'Send OTP' first"}
+                        maxLength={6}
+                        required
+                        disabled={!signupOtpSent}
+                      />
+                    </div>
+                    {!signupOtpSent && (
+                      <button
+                        type="button"
+                        onClick={handleSendSignupOtp}
+                        disabled={sendingSignupOtp || !email || !!emailError}
+                        className="bg-amber-900 hover:bg-amber-950 disabled:bg-slate-300 text-white font-bold text-xs px-3.5 py-2 rounded-lg cursor-pointer transition-all shrink-0 shadow-xs"
+                      >
+                        {sendingSignupOtp ? "Sending..." : "Send OTP"}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium">We will send a 6-digit verification OTP code to your email inbox.</p>
+                </div>
               </>
             )}
 
@@ -388,12 +498,17 @@ export const Login: React.FC = () => {
                     <input
                       type="text"
                       value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-emerald-500 dark:text-white"
+                      onChange={(e) => handleIdentifierChange(e.target.value)}
+                      className={`w-full bg-white dark:bg-slate-800 border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 dark:text-white ${
+                        identifierError
+                          ? "border-rose-300 dark:border-rose-900/50 focus:ring-rose-500"
+                          : "border-slate-200 dark:border-slate-700 focus:ring-slate-900 dark:focus:ring-emerald-500"
+                      }`}
                       placeholder="e.g. name@email.com or 9876543210"
                       required
                     />
                   </div>
+                  {identifierError && <p className="text-[10px] text-rose-500 font-semibold mt-1">{identifierError}</p>}
                 </div>
 
                 <div>
@@ -401,10 +516,10 @@ export const Login: React.FC = () => {
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Password</label>
                     <button
                       type="button"
-                      onClick={() => showToast("Please contact the Store Admin in-person or via phone to reset your account password.", "info")}
-                      className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white underline font-semibold bg-transparent border-0 cursor-pointer"
+                      onClick={() => toggleAuthMode("RECOVERY")}
+                      className="text-[10px] text-orange-600 dark:text-orange-400 font-bold hover:underline bg-transparent border-0 cursor-pointer"
                     >
-                      Forgot Password?
+                      Forgot Password? (Reset via Email OTP)
                     </button>
                   </div>
                   <div className="relative">
@@ -428,6 +543,16 @@ export const Login: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleAuthMode("OTP_LOGIN")}
+                    className="text-xs text-orange-600 dark:text-orange-400 font-extrabold hover:underline bg-transparent border-0 cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Sign In with Email OTP Code instead</span>
+                  </button>
+                </div>
               </>
             )}
 

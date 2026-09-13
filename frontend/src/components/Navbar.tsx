@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useShop } from "../context/ShopContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api";
+import { encryptPassword } from "../utils/crypto";
 import { compressImageToWebP } from "../utils/imageCompressor";
 import { LogOut, ShoppingCart, Power, User, X, Mail, Phone, ShieldCheck, Camera, Trash2, UserPlus, Eye, EyeOff, CreditCard } from "lucide-react";
 
@@ -134,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
         name: adminName.trim(),
         email: adminEmail.trim(),
         phone: adminPhone.trim(),
-        password: adminPassword,
+        password: encryptPassword(adminPassword),
         role: "ADMIN"
       });
       showToast(`Successfully registered new Admin (${adminName.trim()})!`, "success");
@@ -153,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartToggle }) => {
   return (
     <>
       <nav
-        className="sticky top-0 z-30"
+        className="sticky top-0 z-50"
         style={{
           background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #7c2d12 100%)",
           boxShadow: "0 4px 20px rgba(127,29,29,0.35)",

@@ -92,7 +92,7 @@ export const authApi = {
     return request("/auth/logout", { method: "POST" });
   },
   getMe: async () => request("/auth/me"),
-  sendOtp: async (body: { identifier: string; type: "LOGIN" | "RECOVERY" }) => 
+  sendOtp: async (body: { identifier: string; type: "LOGIN" | "RECOVERY" | "SIGNUP" }) => 
     request("/auth/send-otp", { method: "POST", body: JSON.stringify(body) }),
   verifyOtpLogin: async (body: { identifier: string; otp: string }) => 
     request("/auth/verify-otp-login", { method: "POST", body: JSON.stringify(body) }),

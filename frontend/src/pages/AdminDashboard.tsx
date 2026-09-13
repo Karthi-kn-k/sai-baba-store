@@ -3,6 +3,7 @@ import { useToast } from "../context/ToastContext";
 import { productApi, orderApi, ledgerApi, adminApi, authApi } from "../api";
 import { compressImageToWebP } from "../utils/imageCompressor";
 import { playSound, startAdminAlarm, stopAdminAlarm, type SoundTone } from "../utils/sound";
+import { requestNotificationPermission, sendSystemNotification } from "../utils/notifications";
 import { 
   Search, Plus, Edit2, Trash2, 
   Package, Users, ClipboardList, 
@@ -106,6 +107,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Poll notifications and orders every 6 seconds silently
   useEffect(() => {
+    requestNotificationPermission();
     loadNotifications();
     loadAllData(false);
     const interval = setInterval(() => {
@@ -138,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
         const unhandledPlaced = ordData.orders.filter((o: any) => o.status === "PLACED");
 
         if (unhandledPlaced.length > 0 && soundEnabled) {
-          // Trigger the 10-second alarm ring ONLY when a NEW order arrives
+          // Trigger the 10-second alarm ring & push notification ONLY when a NEW order arrives
           if (prevOrderCountRef.current !== null && ordData.orders.length > prevOrderCountRef.current) {
             setHasNewOrderAlert(true);
             setTimeout(() => setHasNewOrderAlert(false), 10000);
@@ -146,6 +148,14 @@ export const AdminDashboard: React.FC = () => {
             startAdminAlarm(adminSoundTone, 10000);
             setIsAlarmRinging(true);
             setTimeout(() => setIsAlarmRinging(false), 10000);
+
+            const latestOrder = ordData.orders[0];
+            const custName = latestOrder?.customer?.name || "a customer";
+            const amount = latestOrder?.totalAmount ? latestOrder.totalAmount.toFixed(2) : "0.00";
+            sendSystemNotification(
+              "🛍️ New Order Received!",
+              `New order received from ${custName} — ₹${amount}`
+            );
           }
         } else {
           stopAdminAlarm();

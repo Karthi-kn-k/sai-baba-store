@@ -6,6 +6,7 @@ import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { addNotification } from "../utils/notifications";
 import { sendOtpNotification } from "../utils/mailer";
 import { OtpService } from "../services/otpService";
+import { decryptPassword } from "../utils/crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "default_refresh_secret";
@@ -28,13 +29,19 @@ const generateTokens = (user: { id: string; email: string; role: string }) => {
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, otp } = req.body;
 
     if (!name || !email || !phone || !password) {
       res.status(400).json({ message: "Name, email, phone, and password are required." });
       return;
     }
 
+    if (!otp) {
+      res.status(400).json({ message: "Email verification OTP code is required to create an account." });
+      return;
+    }
+
+    const rawPassword = decryptPassword(password);
     const trimmedEmail = email.trim();
     const trimmedPhone = phone.trim();
 
@@ -52,9 +59,17 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // 3. Verify Email OTP before proceeding
+    try {
+      await OtpService.verifyOtp({ email: trimmedEmail, purpose: "SIGNUP", otp: otp.trim() });
+    } catch (otpErr: any) {
+      res.status(400).json({ message: otpErr.message || "Invalid or expired Email OTP code." });
+      return;
+    }
+
     // 3. Validate strong password
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-    if (!strongPasswordRegex.test(password)) {
+    if (!strongPasswordRegex.test(rawPassword)) {
       res.status(400).json({ message: "Password must be at least 8 characters long and contain uppercase, lowercase, a number, and a special character." });
       return;
     }
@@ -73,7 +88,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(rawPassword, 10);
     const assignedRole = role === "ADMIN" ? "ADMIN" : "CUSTOMER";
 
     const user = await prisma.user.create({
@@ -132,7 +147,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const rawPassword = decryptPassword(password);
+
+    const isMatch = await bcrypt.compare(rawPassword, user.passwordHash);
     if (!isMatch) {
       res.status(401).json({ message: "Invalid email/phone or password." });
       return;
@@ -222,7 +239,25 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verify user exists with this email
+    // Handle SIGNUP OTP request (when user does not exist yet)
+    if (type === "SIGNUP") {
+      const existingUser = await prisma.user.findUnique({ where: { email: trimmedIdentifier } });
+      if (existingUser) {
+        res.status(400).json({ message: "An account already exists with this email address. Please sign in instead." });
+        return;
+      }
+
+      const result = await OtpService.sendOtp({
+        email: trimmedIdentifier,
+        purpose: "SIGNUP"
+      });
+
+      addNotification(`Signup Email OTP sent to ${trimmedIdentifier}.`);
+      res.status(200).json(result);
+      return;
+    }
+
+    // Verify user exists with this email for LOGIN or RECOVERY
     const user = await prisma.user.findUnique({ where: { email: trimmedIdentifier } });
 
     if (!user) {
@@ -325,14 +360,16 @@ export const resetPasswordOtp = async (req: Request, res: Response): Promise<voi
       }
     }
 
+    const rawPassword = decryptPassword(newPassword);
+
     // Validate new password strength
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-    if (!strongPasswordRegex.test(newPassword)) {
+    if (!strongPasswordRegex.test(rawPassword)) {
       res.status(400).json({ message: "Password must be at least 8 characters and contain uppercase, lowercase, a number, and a special character." });
       return;
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(rawPassword, 10);
 
     const user = await prisma.user.findUnique({ where: { email: trimmedIdentifier } });
 
