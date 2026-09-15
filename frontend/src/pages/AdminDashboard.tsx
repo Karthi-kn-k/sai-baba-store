@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Poll notifications and orders every 6 seconds silently
+  // Poll notifications and orders every 15 seconds silently
   useEffect(() => {
     requestNotificationPermission();
     loadNotifications();
@@ -113,7 +113,7 @@ export const AdminDashboard: React.FC = () => {
     const interval = setInterval(() => {
       loadNotifications();
       loadAllData(true);
-    }, 6000);
+    }, 15000);
     return () => {
       clearInterval(interval);
       stopAdminAlarm();

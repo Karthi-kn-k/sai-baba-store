@@ -29,8 +29,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000); // Sync every 5s
-    return () => clearInterval(interval);
+    // Poll status periodically (every 60s) & refresh on tab focus
+    const interval = setInterval(fetchStatus, 60000);
+    window.addEventListener("focus", fetchStatus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", fetchStatus);
+    };
   }, []);
 
   const toggleShopOpen = async () => {

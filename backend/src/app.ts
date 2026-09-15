@@ -29,6 +29,17 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
+// Strict Rate Limiting for Authentication / Sensitive endpoints to prevent brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Max 30 auth requests per IP per 15 min window
+  message: { message: "Too many login/signup attempts. Please wait 15 minutes before trying again." }
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/send-otp", authLimiter);
+app.use("/api/auth/reset-password-otp", authLimiter);
+
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {

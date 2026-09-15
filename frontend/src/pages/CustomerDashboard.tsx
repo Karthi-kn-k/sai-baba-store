@@ -139,14 +139,18 @@ export const CustomerDashboard: React.FC = () => {
       }
       const ledData = await ledgerApi.getLedger();
       setLedger(ledData);
-      const config = await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`).then(r => r.json()).catch(() => ({}));
-      const localVpa = localStorage.getItem("saibaba_merchant_vpa");
-      const localPhone = localStorage.getItem("saibaba_admin_phone");
-      setUpiConfig({
-        upiVpa: localVpa || config.upiVpa || "karthikn221005@oksbi",
-        upiName: config.upiName || "karthi keyan",
-        adminPhone: localPhone || config.adminPhone || "9123456789"
-      });
+
+      // Only fetch store config on initial load (not on background poll loop)
+      if (!isSilent) {
+        const config = await fetch(`${import.meta.env.VITE_API_BASE || "/api"}/config`).then(r => r.json()).catch(() => ({}));
+        const localVpa = localStorage.getItem("saibaba_merchant_vpa");
+        const localPhone = localStorage.getItem("saibaba_admin_phone");
+        setUpiConfig({
+          upiVpa: localVpa || config.upiVpa || "karthikn221005@oksbi",
+          upiName: config.upiName || "karthi keyan",
+          adminPhone: localPhone || config.adminPhone || "9123456789"
+        });
+      }
     } catch (err: any) {
       if (!isSilent) showToast(err.message || "Failed to load data.", "error");
     } finally {
@@ -157,7 +161,7 @@ export const CustomerDashboard: React.FC = () => {
   useEffect(() => {
     requestNotificationPermission();
     loadData();
-    const interval = setInterval(() => loadData(true), 6000);
+    const interval = setInterval(() => loadData(true), 25000);
     return () => clearInterval(interval);
   }, [customerSoundTone]);
   useEffect(() => {

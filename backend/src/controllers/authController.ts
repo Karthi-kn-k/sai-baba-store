@@ -29,7 +29,7 @@ const generateTokens = (user: { id: string; email: string; role: string }) => {
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password } = req.body;
 
     if (!name || !email || !phone || !password) {
       res.status(400).json({ message: "Name, email, phone, and password are required." });
@@ -76,7 +76,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
 
     const passwordHash = await bcrypt.hash(rawPassword, 10);
-    const assignedRole = role === "ADMIN" ? "ADMIN" : "CUSTOMER";
+    const assignedRole = "CUSTOMER";
 
     const user = await prisma.user.create({
       data: {
@@ -333,18 +333,16 @@ export const resetPasswordOtp = async (req: Request, res: Response): Promise<voi
     const trimmedIdentifier = identifier.trim();
     const trimmedOtp = otp.trim();
 
-    // Verify OTP via email (or allow ADMIN_OVERRIDE if requested by logged-in admin)
-    if (trimmedOtp !== "ADMIN_OVERRIDE") {
-      try {
-        await OtpService.verifyOtp({
-          email: trimmedIdentifier,
-          purpose: "RECOVERY",
-          otp: trimmedOtp
-        });
-      } catch (err: any) {
-        res.status(400).json({ message: err.message || "Invalid OTP code." });
-        return;
-      }
+    // Verify OTP via email
+    try {
+      await OtpService.verifyOtp({
+        email: trimmedIdentifier,
+        purpose: "RECOVERY",
+        otp: trimmedOtp
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Invalid OTP code." });
+      return;
     }
 
     const rawPassword = decryptPassword(newPassword);
