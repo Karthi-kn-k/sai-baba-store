@@ -26,6 +26,7 @@ export const AdminDashboard: React.FC = () => {
   // Search/Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("");
+  const [customerFilter, setCustomerFilter] = useState<"ALL" | "ACTIVE_NOTEBOOK" | "PENDING_REQUESTS">("ALL");
 
   // Product Edit Modal state
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -217,11 +218,22 @@ export const AdminDashboard: React.FC = () => {
 
   // Filtered Customers Summary
   const filteredCustomers = useMemo(() => {
-    return customersSummary.filter((c) => 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.phone.includes(searchQuery)
-    );
-  }, [customersSummary, searchQuery]);
+    return customersSummary.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.phone.includes(searchQuery) ||
+        c.email.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType =
+        customerFilter === "ACTIVE_NOTEBOOK"
+          ? c.hasAccountNotebook === true
+          : customerFilter === "PENDING_REQUESTS"
+          ? c.notebookRequestStatus === "PENDING"
+          : true;
+
+      return matchesSearch && matchesType;
+    });
+  }, [customersSummary, searchQuery, customerFilter]);
 
   // Handle Product Save (Create or Update)
   const handleProductSubmit = async (e: React.FormEvent) => {
@@ -524,8 +536,8 @@ export const AdminDashboard: React.FC = () => {
       {/* ── Overview Cards ── */}
       <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-5 sm:mb-8">
         <div
-          onClick={() => { setSelectedCustomer(null); setActiveTab("customers"); setSearchQuery(""); }}
-          className="rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4 cursor-pointer transition-all hover-lift"
+          onClick={() => { setSelectedCustomer(null); setActiveTab("customers"); setCustomerFilter("ACTIVE_NOTEBOOK"); setSearchQuery(""); }}
+          className="rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4 cursor-pointer transition-all hover-lift hover:border-orange-400"
           style={{ background: "white", border: "2px solid rgba(249,115,22,0.15)", boxShadow: "0 2px 12px rgba(249,115,22,0.07)" }}
         >
           <div className="p-3 rounded-xl shrink-0" style={{ background: "rgba(249,115,22,0.1)", color: "#f97316" }}>
@@ -539,9 +551,9 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
         <div
-          onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
+          onClick={() => { setActiveTab("orders"); setOrderStatusFilter("PLACED"); setSearchQuery(""); }}
           className={`rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4 cursor-pointer transition-all hover-lift ${
-            hasNewOrderAlert ? "animate-pulse border-4 border-amber-400 shadow-2xl scale-[1.02]" : ""
+            hasNewOrderAlert ? "animate-pulse border-4 border-amber-400 shadow-2xl scale-[1.02]" : "hover:border-orange-400"
           }`}
           style={hasNewOrderAlert 
             ? { background: "linear-gradient(135deg, #fef3c7, #fde68a)", borderColor: "#f59e0b", boxShadow: "0 0 25px rgba(245,158,11,0.6)" }
@@ -905,7 +917,43 @@ export const AdminDashboard: React.FC = () => {
             </div>
           ) : (
             /* GENERAL CUSTOMERS TABLE LAYOUT */
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-6 animate-fade-in">
+              {/* Quick Customer Sub-filters */}
+              <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-amber-100">
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider mr-1">Filter View:</span>
+                <button
+                  onClick={() => setCustomerFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    customerFilter === "ALL"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100"
+                  }`}
+                >
+                  All Customers ({customersSummary.length})
+                </button>
+                <button
+                  onClick={() => setCustomerFilter("ACTIVE_NOTEBOOK")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    customerFilter === "ACTIVE_NOTEBOOK"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100"
+                  }`}
+                >
+                  Active Khata Notebooks ({customersSummary.filter(c => c.hasAccountNotebook).length})
+                </button>
+                {notebookRequests.length > 0 && (
+                  <button
+                    onClick={() => setCustomerFilter("PENDING_REQUESTS")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      customerFilter === "PENDING_REQUESTS"
+                        ? "bg-orange-600 text-white shadow-xs"
+                        : "bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100"
+                    }`}
+                  >
+                    Pending Requests ({notebookRequests.length})
+                  </button>
+                )}
+              </div>
               {/* Awaiting Notebook Requests Sub-section */}
               {notebookRequests.length > 0 && (
                 <div className="bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900/30 rounded-xl p-5 shadow-sm animate-slide-in transition-colors">

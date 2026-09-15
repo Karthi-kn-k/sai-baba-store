@@ -598,18 +598,17 @@ export const CustomerDashboard: React.FC = () => {
             {activeTab === "catalog" && (
               <div className="space-y-4">
 
-                {/* ── Dedicated Category View Header (when category is selected) ── */}
+                {/* ── Dedicated Sticky Category View Header (when category is selected) ── */}
                 {category ? (
-                  <div className="p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 shadow-xs bg-white border border-amber-200/90">
+                  <div className="sticky top-[56px] sm:top-[64px] z-40 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 shadow-md bg-white backdrop-blur-md border border-amber-300 my-2 transition-all">
                     <button
                       onClick={() => setCategory("")}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 transition-all cursor-pointer shrink-0"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-105 active:scale-95"
                     >
                       <ArrowLeft className="w-4 h-4 text-orange-600" />
-                      <span>Back</span>
+                      <span>Back to Categories</span>
                     </button>
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-amber-800 hidden sm:inline">Category:</span>
                       <h2 className="text-sm sm:text-base font-extrabold text-amber-950 capitalize truncate">
                         {category}
                       </h2>
@@ -1503,6 +1502,8 @@ export const CustomerDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+
 
       {/* ── Customer Sound Settings Modal ── */}
       {showCustomerSoundSettings && (
