@@ -780,9 +780,15 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-lg font-bold text-emerald-600 mt-1">₹{customerLedger.credits.toFixed(2)}</p>
                     </div>
                     <div className="border-l border-slate-200 dark:border-slate-800 pl-4 p-2">
-                      <span className="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wide">Outstanding Owed</span>
-                      <p className={`text-xl font-extrabold mt-0.5 ${customerLedger.balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-450"}`}>
-                        ₹{customerLedger.balance.toFixed(2)}
+                      <span className="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wide">
+                        {customerLedger.balance < 0 ? "Amount Owed to Shop" : customerLedger.balance > 0 ? "Advance Store Credit" : "Account Status"}
+                      </span>
+                      <p className={`text-xl font-extrabold mt-0.5 ${customerLedger.balance < 0 ? "text-rose-600 dark:text-rose-400" : customerLedger.balance > 0 ? "text-emerald-600 dark:text-emerald-450" : "text-slate-500"}`}>
+                        {customerLedger.balance < 0
+                          ? `-₹${Math.abs(customerLedger.balance).toFixed(2)}`
+                          : customerLedger.balance > 0
+                          ? `₹${customerLedger.balance.toFixed(2)}`
+                          : "₹0.00"}
                       </p>
                     </div>
                   </div>
@@ -908,8 +914,10 @@ export const AdminDashboard: React.FC = () => {
                     )}
                     
                     <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-805 rounded-xl flex items-center justify-between font-bold text-slate-800 dark:text-white text-sm transition-colors">
-                      <span>Total Amount Yet to be Paid</span>
-                      <span className="text-base text-amber-600 dark:text-amber-400">₹{customerLedger.balance.toFixed(2)}</span>
+                      <span>{customerLedger.balance < 0 ? "Outstanding Amount Owed to Shop" : customerLedger.balance > 0 ? "Net Advance Credit Available" : "Account Net Balance"}</span>
+                      <span className={`text-base ${customerLedger.balance < 0 ? "text-rose-600 dark:text-rose-400" : customerLedger.balance > 0 ? "text-emerald-600 dark:text-emerald-450" : "text-slate-500"}`}>
+                        {customerLedger.balance < 0 ? `-₹${Math.abs(customerLedger.balance).toFixed(2)}` : customerLedger.balance > 0 ? `₹${customerLedger.balance.toFixed(2)}` : "₹0.00"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1027,8 +1035,8 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{c.phone}</div>
                               </td>
                               <td className="py-4 px-6 text-right font-bold text-slate-900 dark:text-white">
-                                <span className={c.balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-450"}>
-                                  ₹{c.balance.toFixed(2)}
+                                <span className={c.balance < 0 ? "text-rose-600 dark:text-rose-400" : c.balance > 0 ? "text-emerald-600 dark:text-emerald-450" : "text-slate-400"}>
+                                  {c.balance < 0 ? `-₹${Math.abs(c.balance).toFixed(2)}` : c.balance > 0 ? `₹${c.balance.toFixed(2)}` : "₹0.00"}
                                 </span>
                               </td>
                               <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
@@ -1757,9 +1765,15 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-base font-bold text-blue-600 mt-1">₹{customerLedger.credits.toFixed(2)}</p>
                     </div>
                     <div className="border-l border-slate-100 pl-4 p-2">
-                      <span className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Outstanding Balance Owed</span>
-                      <p className={`text-lg font-extrabold mt-0.5 ${customerLedger.balance > 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                        ₹{customerLedger.balance.toFixed(2)}
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        {customerLedger.balance < 0 ? "Amount Owed to Shop" : customerLedger.balance > 0 ? "Advance Store Credit" : "Account Status"}
+                      </span>
+                      <p className={`text-lg font-extrabold mt-0.5 ${customerLedger.balance < 0 ? "text-rose-600" : customerLedger.balance > 0 ? "text-emerald-600" : "text-slate-500"}`}>
+                        {customerLedger.balance < 0
+                          ? `-₹${Math.abs(customerLedger.balance).toFixed(2)}`
+                          : customerLedger.balance > 0
+                          ? `₹${customerLedger.balance.toFixed(2)}`
+                          : "₹0.00"}
                       </p>
                     </div>
                   </div>

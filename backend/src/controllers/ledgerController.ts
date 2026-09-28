@@ -41,7 +41,7 @@ export const getCustomerLedger = async (req: AuthenticatedRequest, res: Response
       }
     });
 
-    // Calculate balances: sum(DEBIT) - sum(CREDIT) where status is APPROVED
+    // Calculate balances: sum(CREDIT) - sum(DEBIT) where status is APPROVED
     const debits = entries
       .filter((e) => e.type === LedgerEntryType.DEBIT && e.status === "APPROVED")
       .reduce((sum, e) => sum + e.amount, 0);
@@ -50,7 +50,7 @@ export const getCustomerLedger = async (req: AuthenticatedRequest, res: Response
       .filter((e) => e.type === LedgerEntryType.CREDIT && e.status === "APPROVED")
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const balance = debits - credits;
+    const balance = credits - debits;
 
     res.status(200).json({
       customer,
@@ -103,7 +103,7 @@ export const getLedgerSummary = async (req: AuthenticatedRequest, res: Response)
           .filter((e) => e.type === LedgerEntryType.CREDIT && e.status === "PENDING")
           .reduce((sum, e) => sum + e.amount, 0);
 
-        const balance = debits - credits;
+        const balance = credits - debits;
 
         return {
           ...c,

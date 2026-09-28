@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
 import { useShop } from "../context/ShopContext";
 import { productApi, orderApi, ledgerApi } from "../api";
-import { playPackedOrderSound, playSound, type SoundTone } from "../utils/sound";
+import { playSound, type SoundTone } from "../utils/sound";
 import { requestNotificationPermission, sendSystemNotification } from "../utils/notifications";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -109,8 +109,25 @@ export const CustomerDashboard: React.FC = () => {
     playSound(tone, 0.4);
   };
 
-  // Ref for tracking packed orders to trigger sound alerts
+  // Ref for tracking packed orders to trigger push notification alerts
   const prevPackedOrdersRef = React.useRef<Set<string>>(new Set());
+
+  const getNotifiedPackedOrders = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem("saibaba_notified_packed_orders");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  };
+
+  const saveNotifiedPackedOrder = (orderId: string) => {
+    try {
+      const notifiedSet = getNotifiedPackedOrders();
+      notifiedSet.add(orderId);
+      localStorage.setItem("saibaba_notified_packed_orders", JSON.stringify(Array.from(notifiedSet)));
+    } catch {}
+  };
 
   /* ── Data loading ── */
   const loadData = async (isSilent = false) => {
@@ -123,18 +140,25 @@ export const CustomerDashboard: React.FC = () => {
         const currentlyPacked = new Set<string>(
           ordData.orders.filter((o: any) => o.status === "PACKED").map((o: any) => o.id)
         );
-        for (const id of currentlyPacked) {
-          if (!prevPackedOrdersRef.current.has(id)) {
-            playPackedOrderSound(customerSoundTone);
-            showToast("🎉 Great news! Your order is PACKED & ready for pickup!", "success");
-            sendSystemNotification(
-              "🎉 Order Ready for Pickup!",
-              `${user?.name || "Customer"}, your order is packed and ready!`
-            );
-            break;
+        const alreadyNotified = getNotifiedPackedOrders();
+
+        if (isSilent) {
+          // Background polling check: trigger push notification ONLY when order status newly becomes PACKED
+          for (const id of currentlyPacked) {
+            if (!prevPackedOrdersRef.current.has(id) && !alreadyNotified.has(id)) {
+              sendSystemNotification(
+                "🎉 Order Ready for Pickup!",
+                `${user?.name || "Customer"}, your order is packed and ready for pickup!`
+              );
+              saveNotifiedPackedOrder(id);
+            }
           }
+        } else {
+          // Initial load on login: silently mark all existing PACKED orders as notified (no popups on login)
+          currentlyPacked.forEach(id => saveNotifiedPackedOrder(id));
         }
-        prevPackedOrdersRef.current = currentlyPacked;
+
+        prevPackedOrdersRef.current = new Set([...currentlyPacked, ...alreadyNotified]);
         setOrders(ordData.orders);
       }
       const ledData = await ledgerApi.getLedger();
@@ -461,20 +485,30 @@ export const CustomerDashboard: React.FC = () => {
               <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: "rgba(253,230,138,0.7)" }}>
                 Account Note Balance
               </p>
-              <p className="text-3xl sm:text-4xl font-extrabold mt-1" style={{ color: "#fde68a" }}>
-                ₹{ledger?.balance !== undefined ? ledger.balance.toFixed(2) : "0.00"}
+              <p className="text-3xl sm:text-4xl font-extrabold mt-1" style={{ color: (ledger?.balance || 0) < 0 ? "#fca5a5" : "#fde68a" }}>
+                {(ledger?.balance || 0) < 0
+                  ? `-₹${Math.abs(ledger?.balance || 0).toFixed(2)}`
+                  : (ledger?.balance || 0) > 0
+                  ? `₹${(ledger?.balance || 0).toFixed(2)}`
+                  : "₹0.00"}
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span
                   className="text-[10px] font-bold px-3 py-1 rounded-full border"
                   style={
-                    (ledger?.balance || 0) > 0
-                      ? { background: "rgba(251,191,36,0.2)", color: "#fde68a", borderColor: "rgba(253,230,138,0.35)" }
+                    (ledger?.balance || 0) < 0
+                      ? { background: "rgba(239,68,68,0.2)", color: "#fca5a5", borderColor: "rgba(239,68,68,0.35)" }
+                      : (ledger?.balance || 0) > 0
+                      ? { background: "rgba(52,211,153,0.2)", color: "#6ee7b7", borderColor: "rgba(52,211,153,0.35)" }
                       : { background: "rgba(52,211,153,0.15)", color: "#6ee7b7", borderColor: "rgba(52,211,153,0.3)" }
                   }
                 >
-                  {(ledger?.balance || 0) > 0 ? "⚠ Payment Outstanding" : "✓ Account Clear"}
+                  {(ledger?.balance || 0) < 0
+                    ? `⚠ Payment Outstanding (₹${Math.abs(ledger?.balance || 0).toFixed(2)} Owed)`
+                    : (ledger?.balance || 0) > 0
+                    ? `✓ Advance Credit Available`
+                    : "✓ Account Clear"}
                 </span>
                 <button
                   onClick={() => setLedgerModalOpen(true)}
@@ -483,9 +517,9 @@ export const CustomerDashboard: React.FC = () => {
                 >
                   View Account Note
                 </button>
-                {(ledger?.balance || 0) > 0 && (
+                {(ledger?.balance || 0) < 0 && (
                   <button
-                    onClick={() => { setLedgerPayAmount(ledger.balance.toString()); setLedgerPayModalOpen(true); }}
+                    onClick={() => { setLedgerPayAmount(Math.abs(ledger.balance).toString()); setLedgerPayModalOpen(true); }}
                     className="btn-gold text-[11px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
                   >
                     Pay Off Balance
@@ -1391,8 +1425,16 @@ export const CustomerDashboard: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-right" style={{ borderLeft: "1px solid rgba(249,115,22,0.15)", paddingLeft: "16px" }}>
-                  <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: SAI.gold }}>Outstanding</p>
-                  <p className="font-extrabold text-sm" style={{ color: SAI.gold }}>₹{(ledger?.balance || 0).toFixed(2)}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: (ledger?.balance || 0) < 0 ? SAI.maroon : SAI.gold }}>
+                    {(ledger?.balance || 0) < 0 ? "Amount Owed" : (ledger?.balance || 0) > 0 ? "Advance Credit" : "Balance"}
+                  </p>
+                  <p className="font-extrabold text-sm" style={{ color: (ledger?.balance || 0) < 0 ? SAI.maroon : SAI.saffronDp }}>
+                    {(ledger?.balance || 0) < 0
+                      ? `-₹${Math.abs(ledger?.balance || 0).toFixed(2)}`
+                      : (ledger?.balance || 0) > 0
+                      ? `₹${(ledger?.balance || 0).toFixed(2)}`
+                      : "₹0.00"}
+                  </p>
                 </div>
               </div>
             </div>

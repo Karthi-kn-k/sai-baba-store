@@ -8,22 +8,12 @@ export async function requestNotificationPermission(): Promise<boolean> {
     return false;
   }
 
-  // Register dummy inline ServiceWorker if available to enable OS-level notifications
+  // Register sw.js if ServiceWorker is supported
   if ("serviceWorker" in navigator) {
     try {
-      const swCode = `
-        self.addEventListener('install', e => self.skipWaiting());
-        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-        self.addEventListener('notificationclick', e => {
-          e.notification.close();
-          e.waitUntil(clients.matchAll({type:'window'}).then(c => c.length > 0 ? c[0].focus() : clients.openWindow('/')));
-        });
-      `;
-      const blob = new Blob([swCode], { type: "application/javascript" });
-      const swUrl = URL.createObjectURL(blob);
-      await navigator.serviceWorker.register(swUrl).catch(() => {});
+      await navigator.serviceWorker.register("/sw.js").catch(() => {});
     } catch (e) {
-      // Ignore fallback SW creation errors
+      // Ignore SW registration errors
     }
   }
 
@@ -47,32 +37,47 @@ export function sendSystemNotification(title: string, body: string, icon?: strin
     return;
   }
 
-  if (Notification.permission === "granted") {
+  const trigger = (perm: string) => {
+    if (perm !== "granted") return;
     try {
-      const options = {
+      const options: NotificationOptions = {
         body,
         icon: icon || "/favicon.svg",
         badge: "/favicon.svg",
         tag: `saibaba-store-${Date.now()}`,
-        requireInteraction: true,
-        vibrate: [200, 100, 200]
+        requireInteraction: true
       };
 
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(title, options);
-        }).catch(() => {
-          new Notification(title, options);
-        });
-      } else {
+      let notificationSent = false;
+
+      // 1. Try standard browser Notification API (works instantly on Desktop Chrome, Edge, Firefox, Safari)
+      try {
         const n = new Notification(title, options);
         n.onclick = () => {
           window.focus();
           n.close();
         };
+        notificationSent = true;
+      } catch (e) {
+        // Ignored, fallback to ServiceWorker below
+      }
+
+      // 2. Service Worker fallback (required for Mobile Chrome/Android)
+      if (!notificationSent && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, options);
+        }).catch(() => {});
       }
     } catch (err) {
       console.error("Failed to display system notification:", err);
     }
+  };
+
+  if (Notification.permission === "granted") {
+    trigger("granted");
+  } else if (Notification.permission !== "denied") {
+    requestNotificationPermission().then(granted => {
+      if (granted) trigger("granted");
+    });
   }
 }
